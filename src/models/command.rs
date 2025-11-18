@@ -16,7 +16,8 @@ pub mod command_model {
     #[derive(Subcommand)]
     pub enum Commands {
         New { name: Option<String> },
-        Release { name_proyect: String },
+        Release { project: String },
+        Module { name: String, project: String },
         Info,
     }
 }

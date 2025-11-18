@@ -1,5 +1,5 @@
 use crate::models::command::command_model::*;
-use crate::utils::handlers::{new::handle_new, release::handler_release};
+use crate::utils::handlers::*;
 use clap::Parser;
 use console::style;
 
@@ -9,11 +9,17 @@ pub fn commands() {
     match &cli.command {
         Commands::New { name } => {
             let _name = name.clone().unwrap_or("app".to_string());
-            handle_new(&_name);
+            new::handle_new(&_name);
         }
 
-        Commands::Release { name_proyect } => {
-            handler_release(name_proyect);
+        Commands::Release {
+            project: name_proyect,
+        } => {
+            release::handler_release(name_proyect);
+        }
+
+        Commands::Module { name, project } => {
+            module::handler_module(name, project);
         }
 
         Commands::Info => {

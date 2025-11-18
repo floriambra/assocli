@@ -3,3 +3,4 @@ pub mod clear_terminal;
 pub mod create_file;
 pub mod file;
 pub mod progress;
+pub mod selection_module_type;
