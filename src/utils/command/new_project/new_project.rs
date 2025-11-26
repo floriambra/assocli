@@ -1,9 +1,9 @@
 use crate::utils::common::{
-    add_dependency::add_dependency, create_file::create_file, file::file_management::copy_template,
+    add_dependency::add_dependency, create_dir::create_dir, create_file::create_file,
+    file::load_template,
 };
 
 use console::style;
-use std::io::Write;
 
 #[derive(Debug, Clone)]
 pub struct NewProject {
@@ -18,15 +18,6 @@ impl NewProject {
 
     pub fn create_project(&mut self, name: &str) -> bool {
         println!("📁 Creating project...");
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        if std::fs::create_dir_all(self.path.as_path()).is_err() {
-            eprintln!(
-                "{}",
-                style("  Error creating project directory").red().bold()
-            );
-            return false;
-        }
 
         let path = self.path.to_str().unwrap_or("");
         let path_project = format!("{path}/{name}");
@@ -80,15 +71,25 @@ impl NewProject {
 
             println!("{}", style("🔍 Checking project Cargo...").cyan().bold());
 
+            std::thread::sleep(std::time::Duration::from_secs(1));
+
             println!(
                 "{}",
-                style("  Adding 'actix-web' to the project...")
-                    .blue()
-                    .bold()
+                style("  Adding 'axum' to the project...").blue().bold()
             );
 
             std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("actix-web", None, project_path);
+            add_dependency("axum", Some("json"), project_path);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            add_dependency("dotenvy", None, project_path);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            add_dependency("serde", Some("derive"), project_path);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            add_dependency("serde_json", None, project_path);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            add_dependency("validator", Some("derive"), project_path);
+            std::thread::sleep(std::time::Duration::from_secs(1));
+            add_dependency("tokio", Some("full"), project_path);
             std::thread::sleep(std::time::Duration::from_secs(1));
             add_dependency("dotenvy", None, project_path);
             std::thread::sleep(std::time::Duration::from_secs(1));
@@ -103,7 +104,7 @@ impl NewProject {
         } else {
             eprintln!(
                 "{}",
-                style("  Error creating actix, problems with the project path.",)
+                style("  Error creating axum, problems with the project path.",)
                     .red()
                     .bold()
             );
@@ -137,19 +138,7 @@ impl NewProject {
                 let mod_rs_path_str = mod_rs_path.to_str().unwrap();
 
                 if !path.exists() {
-                    if std::fs::create_dir_all(&path).is_err() {
-                        eprintln!(
-                            "{}",
-                            style("  Error creating project subdirectory").red().bold()
-                        );
-                        std::process::exit(1)
-                    }
-                    println!(
-                        "{}",
-                        style(format!("  Created: {}", path.display()))
-                            .green()
-                            .bold()
-                    );
+                    create_dir(path);
                 } else {
                     println!(
                         "{}",
@@ -159,28 +148,19 @@ impl NewProject {
                     );
                 }
 
-                create_file(mod_rs_path_str, None);
+                create_file(std::path::PathBuf::new().join(mod_rs_path_str), None);
             }
 
             let mod_file_path = app_path.join("mod.rs");
-            let mod_content = "pub mod module;\npub mod shared;\npub mod config;\n";
+            const CONTENT: &str = "pub mod module;\npub mod shared;\npub mod config;\n";
 
             std::thread::sleep(std::time::Duration::from_secs(1));
-            let file = std::fs::File::create(&mod_file_path);
-            if let Ok(mut file_created) = file {
-                if file_created.write_all(mod_content.as_bytes()).is_err() {
-                    println!("{}", style("  Could not write to mod.rs").red().bold());
-                    std::process::exit(1)
-                }
-            } else {
-                println!(
-                    "{}",
-                    style("  The mod.rs file could not be created")
-                        .red()
-                        .bold()
-                );
-                std::process::exit(1)
-            }
+
+            let common_directory = app_path.join("shared/common");
+
+            create_dir(common_directory);
+
+            create_file(mod_file_path, Some(CONTENT));
 
             println!(
                 "{}",
@@ -217,6 +197,8 @@ impl NewProject {
         let env_rs_path = config_dir.join("env.rs");
         let mod_rs_path = config_dir.join("mod.rs");
 
+        const CONTENT: &str = "\npub mod env;";
+
         if !config_dir.exists() {
             eprintln!(
                 "{}",
@@ -228,22 +210,10 @@ impl NewProject {
             );
             std::process::exit(1)
         }
-
-        let content = "\npub mod env;";
-
         std::thread::sleep(std::time::Duration::from_secs(1));
+
         if mod_rs_path.exists() {
-            if std::fs::write(&mod_rs_path, content).is_err() {
-                eprintln!(
-                    "{}",
-                    style(format!("  Write error {mod_rs_path:?}"))
-                        .red()
-                        .bold()
-                );
-                std::process::exit(1)
-            }
-        } else if let Some(path) = mod_rs_path.to_str() {
-            create_file(path, Some(content));
+            create_file(mod_rs_path, Some(CONTENT));
         } else {
             eprintln!(
                 "{}",
@@ -252,12 +222,28 @@ impl NewProject {
             std::process::exit(1)
         }
 
-        let template = copy_template("env.rs", &env_rs_path);
+        load_template("env.rs", env_rs_path);
+    }
 
-        if template.is_err() {
-            eprintln!("{}", style("  Error loading template").red().bold());
+    pub fn create_files_common(&self) {
+        if !self.project_path.exists() {
+            eprintln!(
+                "{}",
+                style("  Error creating files common,problems with the project path")
+                    .red()
+                    .bold()
+            );
             std::process::exit(1)
         }
+        const CONTENT: &str = "pub mod error;\npub mod validation;";
+
+        let path_common = self.project_path.join("src/app/shared/common");
+
+        load_template("error.rs", path_common.join("error.rs"));
+
+        load_template("validation.rs", path_common.join("validation.rs"));
+
+        create_file(path_common.join("mod.rs"), Some(CONTENT));
     }
 
     pub fn create_env_file(&self) {
@@ -271,9 +257,14 @@ impl NewProject {
             std::process::exit(1)
         }
 
+        const CONTENT: &str = r#"ADDRESS="127.0.0.1"
+        PORT=3000
+        "#;
+
         let env_path = self.project_path.join(".env");
 
         std::thread::sleep(std::time::Duration::from_secs(1));
+
         if env_path.exists() {
             println!(
                 "{}",
@@ -283,24 +274,7 @@ impl NewProject {
             std::process::exit(1)
         }
 
-        let content = r#"ADDRESS="127.0.0.1"
-        PORT=3000
-        "#;
-
-        if std::fs::write(&env_path, content).is_err() {
-            eprintln!(
-                "{}",
-                style("  Error writing environment variables").red().bold()
-            );
-            std::process::exit(1)
-        }
-
-        println!(
-            "{}",
-            style(format!("  .env file created in {env_path:?}"))
-                .green()
-                .bold()
-        );
+        create_file(env_path, Some(CONTENT));
     }
 
     pub fn create_main_rs(&self) {
@@ -321,12 +295,7 @@ impl NewProject {
         }
 
         std::thread::sleep(std::time::Duration::from_secs(1));
-        let template = copy_template("main.rs", &main_path);
-
-        if template.is_err() {
-            eprintln!("{}", style("  Error loading template").red().bold());
-            std::process::exit(1)
-        }
+        load_template("main.rs", main_path);
 
         println!(
             "{}",

@@ -47,12 +47,13 @@ pub fn handle_new(project_name: &str) {
                 path_project.create_actix();
                 path_project.create_app_structure();
                 path_project.create_env_file();
+                path_project.create_files_common();
                 path_project.create_env_rs();
                 path_project.create_main_rs();
                 clear_terminal();
                 println!("{}", style("  Project created.").on_bright().bold());
             } else {
-                clear_terminal();
+                //clear_terminal();
                 println!("{}", style("  Project not created.").red().bold());
             }
         } else {

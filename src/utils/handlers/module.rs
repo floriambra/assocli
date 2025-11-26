@@ -1,5 +1,6 @@
 use crate::{
-    shared::global::PROJECT_PATH, utils::common::selection_module_type::choose_module_type,
+    shared::global::PROJECT_PATH,
+    utils::{command::api::type_api::NewModule, common::selection_module_type::choose_module_type},
 };
 use console::style;
 
@@ -18,7 +19,12 @@ pub fn handler_module(name_module: &str, name_project: &str) {
     }
 
     match choose_module_type(name_module).as_str() {
-        "API" => println!("api"),
+        "API" => {
+            let _module: NewModule = NewModule::new(path_project.clone(), name_module.to_string());
+
+            _module.create_folder_module();
+            _module.create_module_files();
+        }
         "Template" => println!("template"),
         _ => println!("No pasa nada"),
     }

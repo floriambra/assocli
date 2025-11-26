@@ -1,41 +1,43 @@
 use console::style;
-use std::{fs, path::Path};
+use std::{
+    fs,
+    path::{Path, PathBuf},
+};
 
-pub fn create_file(path: &str, content: Option<&str>) {
-    let file_path = Path::new(path);
-
-    if file_path.exists() {
-        println!(
-            "{}",
-            style(format!("  {file_path:?} ya existe, omitiendo..."))
+pub fn create_file(path: PathBuf, content: Option<&str>) {
+    /*
+        if path.exists() {
+            println!(
+                "{}",
+                style(format!(
+                    "  {} It already exists, omitting....",
+                    &path.display()
+                ))
                 .yellow()
                 .bold()
-        );
-        return;
-    }
-
+            );
+            std::process::exit(1)
+        }
+    */
     if let Some(affair) = content {
-        if fs::write(file_path, affair).is_err() {
+        if fs::write(&path, affair).is_err() {
             eprintln!(
                 "{}",
-                style(format!("  error al escribir {file_path:?}"))
+                style(format!("  Error when writing {}", &path.display()))
                     .red()
                     .bold()
             );
-            return;
+            std::process::exit(1)
         }
-    } else if fs::File::create(file_path).is_err() {
+    } else if fs::File::create(&path).is_err() {
         eprintln!(
             "{}",
-            style(format!("  error al crear archivo {file_path:?}"))
+            style(format!("  Error creating file {}", &path.display()))
                 .red()
                 .bold()
         );
-        return;
+        std::process::exit(1)
     }
 
-    println!(
-        "{}",
-        style(format!("  Creado: {file_path:?}")).green().bold()
-    );
+    println!("{}", style(format!("  Created: {path:?}")).green().bold());
 }
