@@ -108,13 +108,51 @@ pub fn overwrite_file(path: &std::path::PathBuf, content: &str) {
 
         println!(
             "{}",
-            style(format!("  File {} modified successfully", path.display()))
-                .green()
-                .bold()
+            style(format!(
+                "  File {} overwritten successfully",
+                path.display()
+            ))
+            .green()
+            .bold()
         );
     }
 
     std::thread::sleep(std::time::Duration::from_secs(1));
+}
+
+pub fn modify_file(path: &std::path::PathBuf, origin_content: &str, modified_content: &str) {
+    if let Ok(mut content) = std::fs::read_to_string(path) {
+        content = content.replace(origin_content, modified_content);
+
+        if std::fs::write(path, content).is_err() {
+            eprintln!(
+                "{}",
+                style(format!(
+                    "  Error loading new content in file error {}",
+                    path.display()
+                ))
+                .red()
+                .bold()
+            );
+            std::process::exit(1);
+        }
+    } else {
+        eprintln!(
+            "{}",
+            style("  Error rewriting the error handling file")
+                .red()
+                .bold()
+        );
+
+        std::process::exit(1)
+    }
+
+    println!(
+        "{}",
+        style(format!("  File {} modified successfully", path.display()))
+            .green()
+            .bold()
+    );
 }
 
 fn capitalize_first(s: &str) -> String {

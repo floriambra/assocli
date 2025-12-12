@@ -23,10 +23,7 @@ async fn main() {
     let env_address: &str = &var_env.get_or("ADDRESS", "127.0.0.1");
 
     let shared_state: std::sync::Arc<AppState> = std::sync::Arc::new(AppState::new());
-    let app = Router::new().nest(
-        "/api",
-        app::module::configure(std::sync::Arc::clone(&shared_state)),
-    );
+    let app = Router::new().merge(app::module::configure(std::sync::Arc::clone(&shared_state)));
 
     let listener = TcpListener::bind(format!("{env_address}:{env_port}"))
         .await

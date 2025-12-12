@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GENERIC</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+
+  <body>
+    <header class="header">
+      <div class="logo">ASSO</div>
+      <h2>GENERIC</h2>
+    </header>
+    <div class="container">
+      <div class="table-container">
+        <div class="table-header">
+          <h2>Data list</h2>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-label">Search by ID</div>
+            <a class="nav-btn" href="/generic/search">Search</a>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Create items</div>
+            <a class="nav-btn" href="/generic/create">Create</a>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Update item by id</div>
+            <a class="nav-btn" href="/generic/update">Update</a>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Delete item by id</div>
+            <a class="nav-btn" href="/generic/delete">Delete</a>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>State</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <td class="id-cell">#{{ item.id }}</td>
+              <td>{{ item.name }}</td>
+              <td>
+                {% if item.state == "on" %}
+                <span class="status active">Active</span>
+                {% else %}
+                <span class="status inactive">Inactive</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %} {% if items | length == 0 %}
+            <tr>
+              <td colspan="3">
+                <div class="empty-state">
+                  <h3>No data available</h3>
+                </div>
+              </td>
+            </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </body>
+</html>

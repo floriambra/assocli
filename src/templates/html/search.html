@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search by ID GENERIC - ASSO</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/style.css" />
+  </head>
+
+  <body>
+    <header class="header">
+      <div class="logo">ASSO</div>
+      <a href="/generic" class="nav-btn">Home</a>
+    </header>
+
+    <div class="container">
+      <div class="search-section">
+        <h1>🔍 Search by ID</h1>
+        <p>Enter the ID of the record you wish to search for</p>
+
+        <form
+          class="search-form"
+          id="_form"
+          action="/generic/search"
+          method="GET"
+        >
+          <div class="search-input-wrapper">
+            <span class="search-icon">🔎</span>
+            <input
+              type="number"
+              name="id"
+              class="search-input"
+              placeholder="Enter the ID (ej: 1, 2, 3...)"
+              value="{% if search_id %}{{ search_id }}{% endif %}"
+              required
+              min="1"
+              id="_id"
+            />
+          </div>
+          <button type="submit" class="search-btn">Search</button>
+        </form>
+      </div>
+
+      {% if error %}
+      <div class="error-state">
+        <div class="icon">⚠️</div>
+        <h3>Not found</h3>
+        <p>No record was found with the ID:{{ search_id }}</p>
+      </div>
+      {% endif %} {% if item %}
+      <div class="result-container">
+        <div class="result-header">
+          <h2>✅ Search results</h2>
+        </div>
+        <div class="result-content">
+          <div class="result-card">
+            <div class="result-field">
+              <span class="result-label">ID:</span>
+              <span class="result-value result-id">#{{ item.id }}</span>
+            </div>
+            <div class="result-field">
+              <span class="result-label">Name:</span>
+              <span class="result-value">{{ item.name }}</span>
+            </div>
+            <div class="result-field">
+              <span class="result-label">State:</span>
+              <span class="result-value">
+                {% if item.state == "on" %}
+                <span class="status activo">Active</span>
+                {% else %}
+                <span class="status inactivo">Inactive</span>
+                {% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% elif not error %}
+      <div class="result-container">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <h3>Perform a search</h3>
+          <p>Enter an ID in the search field to see the results</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

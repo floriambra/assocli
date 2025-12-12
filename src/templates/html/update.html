@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Update Registry GENERIC - ASSO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">ASSO</div>
+    <a href="/generic" class="nav-btn">Home</a>
+  </header>
+
+  <div class="container">
+    {% if not item %}
+    <div class="search-section">
+      <h1>🔍 Search for Record to Update</h1>
+      <p>Enter the ID of the record you wish to modify</p>
+
+      <form class="search-form" action="/generic/update" method="GET">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔎</span>
+          <input type="number" name="id" class="search-input" placeholder="Enter the ID (ej: 1, 2, 3...)" required
+            min="1" />
+        </div>
+        <button type="submit" class="search-btn">Search</button>
+      </form>
+    </div>
+    {% endif %} {% if success %}
+    <div class="success-message">
+      <div class="icon">✅</div>
+      <div class="text">Registration successfully updated!</div>
+    </div>
+    {% endif %} {% if item %}
+    <div class="form-section">
+      <div class="form-header">
+        <h2>✏️ Update Registry</h2>
+        <span class="id-badge">#{{ item.id }}</span>
+      </div>
+
+      <form action="/generic/update" method="POST">
+        <input type="hidden" name="id" value="{{ item.id }}" />
+
+        <div class="form-group">
+          <label class="form-label"> ID </label>
+          <input type="number" class="form-input" value="{{ item.id }}" disabled />
+          <div class="form-help">The ID cannot be modified</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Name <span class="required">*</span>
+          </label>
+          <input type="text" name="name" class="form-input" placeholder="Enter the record name" value="{{ item.name }}"
+            required maxlength="100" />
+          <div class="form-help">Maximum 100 characters</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" name="state" id="stateToggle" {% if item.state %}checked{% endif %}
+                onchange="updateStatusLabel()" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Activate registration</span>
+            <span class="toggle-status {% if item.state %}active{% else %}inactive{% endif %}" id="statusLabel">
+              {% if item.state %}Active{% else %}Inactive{% endif %}
+            </span>
+          </div>
+          <div class="form-help">
+            Active records are available in the system
+          </div>
+        </div>
+
+        <div class="button-group">
+          <a href="/generic" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Save changes</button>
+        </div>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    function updateStatusLabel() {
+      const toggle = document.getElementById("stateToggle");
+      const label = document.getElementById("statusLabel");
+
+      if (toggle.checked) {
+        label.textContent = "Active";
+        label.className = "toggle-status active";
+      } else {
+        label.textContent = "Inactive";
+        label.className = "toggle-status inactive";
+      }
+    }
+  </script>
+</body>
+
+</html>

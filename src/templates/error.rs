@@ -3,21 +3,29 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde::Serialize;
+use serde::{Serialize, Serializer};
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub type ResultAx<T> = std::result::Result<T, ErrorAx>;
+
+fn serialize_status_code<S>(status: &StatusCode, serializer: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    serializer.serialize_u16(status.as_u16())
+}
 
 #[derive(Debug, Serialize)]
-pub struct Error {
+pub struct ErrorAx {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
     pub title: String,
-    pub status: u16,
+    #[serde(serialize_with = "serialize_status_code")]
+    pub status: StatusCode,
     pub detail: String,
 }
 
-impl Error {
-    pub fn new(status: u16, title: impl Into<String>, detail: impl Into<String>) -> Self {
+impl ErrorAx {
+    pub fn new(status: StatusCode, title: impl Into<String>, detail: impl Into<String>) -> Self {
         Self {
             r#type: None,
             title: title.into(),
@@ -33,48 +41,61 @@ impl Error {
 
     // Errores 4xx - Client errors
     pub fn bad_request(detail: impl Into<String>) -> Self {
-        Self::new(400, "Bad Request", detail)
+        Self::new(StatusCode::BAD_REQUEST, "Bad Request", detail)
     }
 
     pub fn unauthorized(detail: impl Into<String>) -> Self {
-        Self::new(401, "Unauthorized", detail)
+        Self::new(StatusCode::UNAUTHORIZED, "Unauthorized", detail)
     }
 
     pub fn forbidden(detail: impl Into<String>) -> Self {
-        Self::new(403, "Forbidden", detail)
+        Self::new(StatusCode::FORBIDDEN, "Forbidden", detail)
     }
 
     pub fn not_found(detail: impl Into<String>) -> Self {
-        Self::new(404, "Not Found", detail)
+        Self::new(StatusCode::NOT_FOUND, "Not Found", detail)
     }
 
     pub fn conflict(detail: impl Into<String>) -> Self {
-        Self::new(409, "Conflict", detail)
+        Self::new(StatusCode::CONFLICT, "Conflict", detail)
     }
 
     pub fn unprocessable(detail: impl Into<String>) -> Self {
-        Self::new(422, "Unprocessable Entity", detail)
+        Self::new(
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Unprocessable Entity",
+            detail,
+        )
     }
 
     // Errores 5xx - Server errors
     pub fn internal(detail: impl Into<String>) -> Self {
-        Self::new(500, "Internal Server Error", detail)
+        Self::new(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Internal Server Error",
+            detail,
+        )
     }
 
     pub fn service_unavailable(detail: impl Into<String>) -> Self {
-        Self::new(503, "Service Unavailable", detail)
+        Self::new(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Service Unavailable",
+            detail,
+        )
     }
 }
 
-impl IntoResponse for Error {
+impl IntoResponse for ErrorAx {
     fn into_response(self) -> Response {
-        let status = StatusCode::from_u16(self.status).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
+        let status =
+            StatusCode::from_u16(self.status.as_u16()).unwrap_or(StatusCode::INTERNAL_SERVER_ERROR);
 
         (status, Json(self)).into_response()
     }
 }
 
-impl std::fmt::Display for Error {
+impl std::fmt::Display for ErrorAx {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{} ({}): {}", self.title, self.status, self.detail)?;
         if let Some(t) = &self.r#type {
@@ -84,4 +105,4 @@ impl std::fmt::Display for Error {
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for ErrorAx {}

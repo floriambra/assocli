@@ -1,4 +1,4 @@
-use crate::app::shared::common::error::Error;
+use crate::app::shared::common::error::ErrorAx;
 use axum::{
     Json,
     body::Body,
@@ -14,7 +14,7 @@ where
     T: DeserializeOwned + Validate + Send,
     S: Send + Sync,
 {
-    type Rejection = Error;
+    type Rejection = ErrorAx;
 
     async fn from_request(req: Request<Body>, state: &S) -> Result<Self, Self::Rejection> {
         // Usa el extractor Json de Axum que ya sabe manejar el estado
@@ -22,7 +22,7 @@ where
             Json::<T>::from_request(req, state)
                 .await
                 .map_err(|rejection: JsonRejection| {
-                    Error::bad_request(format!("Invalid JSON: {}", rejection))
+                    ErrorAx::bad_request(format!("Invalid JSON: {}", rejection))
                 })?;
 
         // Valida
@@ -41,7 +41,7 @@ where
                     })
                 })
                 .collect();
-            Error::unprocessable(errors.join(", "))
+            ErrorAx::unprocessable(errors.join(", "))
         })?;
 
         Ok(ValidatedJson(value))

@@ -1,6 +1,10 @@
 use crate::{
     shared::global::PROJECT_PATH,
-    utils::{command::api::type_api::NewModule, common::selection_module_type::choose_module_type},
+    utils::{
+        command::{api::type_api::NewModule, template::type_template::NewTemplate},
+        common::selection_module_type::choose_module_type,
+        handlers::new,
+    },
 };
 use console::style;
 
@@ -45,7 +49,28 @@ pub fn handler_module(name_module: &str, name_project: &str) {
             new_module.create_folder_module();
             new_module.create_module_files();
         }
-        "Template" => println!("template"),
+        "Template" => {
+            let new_module_template: NewTemplate = NewTemplate::new(
+                path_project
+                    .clone()
+                    .join(format!("src/app/module/{}", name_module)),
+                path_project.clone(),
+                name_module.to_string(),
+            );
+
+            new_module_template.check_project_path();
+            new_module_template.add_dependency();
+            new_module_template.create_folder_module();
+            new_module_template.create_dir_templates();
+            new_module_template.create_dir_static_file();
+            new_module_template.create_templates_files();
+            new_module_template.create_module_files();
+            new_module_template.inject_module_main();
+            new_module_template.reconfigure_file_handler_error();
+            new_module_template.reconfigure_file_state();
+            new_module_template.reconfigure_module_shared();
+            new_module_template.reconfigure_file_main();
+        }
         _ => println!("No pasa nada"),
     }
 

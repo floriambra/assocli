@@ -1,7 +1,10 @@
 pub(crate) mod service {
 
-    use super::super::{models::model::dto::GENERIC, repositories::repository::Repository};
-    use crate::app::shared::common::error::{Error, Result};
+    use super::super::{
+        models::model::dto::{CreateUpdateGENERIC, GENERIC},
+        repositories::repository::Repository,
+    };
+    use crate::app::shared::common::error::{ErrorAx, ResultAx};
 
     pub(crate) struct Service {
         repository: Repository,
@@ -12,60 +15,125 @@ pub(crate) mod service {
             Self { repository }
         }
 
-        pub(crate) async fn get(&self) -> Result<Vec<GENERIC>> {
+        pub(crate) async fn get(&self) -> ResultAx<Vec<GENERIC>> {
             // add code here
             match self.repository.get_all() {
                 Ok(items) => {
                     if !items.is_empty() {
                         Ok(items)
                     } else {
-                        Err(Error::not_found("There are no articles"))
+                        Err(ErrorAx::not_found("There are no articles"))
                     }
                 }
-                Err(_) => Err(Error::service_unavailable(" ")),
+                Err(err) => {
+                    tracing::error!(err);
+                    Err(ErrorAx::service_unavailable(" "))
+                }
             }
         }
 
-        pub(crate) async fn get_by_id(&self, _id: i32) -> Result<Vec<GENERIC>> {
+        pub(crate) async fn get_by_id(&self, _id: i32) -> ResultAx<Option<GENERIC>> {
             match self.repository.get_by_id(_id) {
-                Ok(items) => {
-                    let item_size = items.len();
-                    if item_size > 0 {
-                        Ok(items)
+                Ok(item) => {
+                    if let Some(value) = item {
+                        Ok(Some(value))
                     } else {
-                        Err(Error::not_found(format!(
-                            "There is no article with the id {_id}"
-                        )))
+                        Err(ErrorAx::not_found("item not found"))
                     }
                 }
-                Err(_) => Err(Error::service_unavailable("")),
+                Err(err) => {
+                    tracing::error!(err);
+                    Err(ErrorAx::service_unavailable(""))
+                }
             }
         }
 
-        pub(crate) async fn create(&self, _dto: GENERIC) -> Result<GENERIC> {
-            match self.repository.create(_dto) {
-                Ok(item) => Ok(item),
-                Err(_) => Err(Error::service_unavailable("")),
+        pub(crate) async fn create(&self, _dto: CreateUpdateGENERIC) -> ResultAx<GENERIC> {
+            let mut new_item = GENERIC::default();
+
+            if let Some(id) = _dto.id {
+                new_item.id = id
+            } else {
+                return Err(ErrorAx::bad_request("id cannot be null"));
+            };
+
+            if let Some(name) = _dto.name {
+                new_item.name = name;
+            } else {
+                return Err(ErrorAx::bad_request("name cannot be null"));
+            };
+
+            if let Some(state) = _dto.state {
+                new_item.state = state;
+            } else {
+                return Err(ErrorAx::bad_request("state cannot be null"));
+            };
+
+            match self.repository.create(new_item) {
+                Ok(item) => {
+                    if let Some(value) = item {
+                        Ok(value)
+                    } else {
+                        Err(ErrorAx::conflict("The item already exists"))
+                    }
+                }
+                Err(err) => {
+                    tracing::error!(err);
+                    Err(ErrorAx::service_unavailable(""))
+                }
             }
         }
 
-        pub(crate) async fn update(&self, _dto: GENERIC, _id: i32) -> Result<(i32, GENERIC)> {
-            match self.repository.update(_id, _dto) {
-                Ok(item) => Ok(item),
-                Err(_) => Err(Error::service_unavailable("")),
+        pub(crate) async fn update(
+            &self,
+            _dto: CreateUpdateGENERIC,
+            _id: i32,
+        ) -> ResultAx<(i32, GENERIC)> {
+            let mut modified_item = GENERIC::default();
+
+            if _dto.id.is_none() {
+                return Err(ErrorAx::bad_request("id cannot be modified"));
+            }
+
+            if let Some(name) = _dto.name {
+                modified_item.name = name;
+            } else {
+                modified_item.name = "".to_string();
+            };
+
+            if let Some(state) = _dto.state {
+                modified_item.state = state;
+            } else {
+                modified_item.state = "".to_string();
+            };
+            match self.repository.update(_id, modified_item) {
+                Ok(item) => {
+                    if let Some(value) = item.1 {
+                        Ok((item.0, value))
+                    } else {
+                        Err(ErrorAx::not_found("The item does not exist"))
+                    }
+                }
+                Err(err) => {
+                    tracing::error!(err);
+                    Err(ErrorAx::service_unavailable(""))
+                }
             }
         }
 
-        pub(crate) async fn delete(&self, _id: i32) -> Result<()> {
+        pub(crate) async fn delete(&self, _id: i32) -> ResultAx<()> {
             match self.repository.delete(_id) {
                 Ok(status) => {
                     if status {
                         Ok(())
                     } else {
-                        Err(Error::conflict("item"))
+                        Err(ErrorAx::conflict("item"))
                     }
                 }
-                Err(_) => Err(Error::service_unavailable("")),
+                Err(err) => {
+                    tracing::error!(err);
+                    Err(ErrorAx::service_unavailable(""))
+                }
             }
         }
     }

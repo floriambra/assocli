@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create GENERIC - ASSO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">ASSO</div>
+    <a href="/generic" class="nav-btn">Home</a>
+  </header>
+
+  <div class="container">
+    {% if success %}
+    <div class="success-message">
+      <div class="icon">✅</div>
+      <div class="text">Registration successfully created!</div>
+    </div>
+    {% endif %}
+
+    <div class="form-section">
+      <div class="form-header">
+        <h1>➕ Create New Record</h1>
+        <p>Complete the fields to add a new item.</p>
+      </div>
+
+      <form action="/generic/create" method="POST">
+        <div class="form-group">
+          <label class="form-label">
+            ID <span class="required">*</span>
+          </label>
+          <input type="number" name="id" class="form-input" placeholder="Ej: 1, 2, 3..." required min="1"
+            value="{% if next_id %}{{ next_id }}{% endif %}" />
+          <div class="form-help">
+            The ID must be unique and greater than 0
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            Name <span class="required">*</span>
+          </label>
+          <input type="text" name="name" class="form-input" placeholder="Enter the record name" required
+            maxlength="100" />
+          <div class="form-help">Maximum 100 characters</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">State</label>
+          <div class="toggle-container">
+            <label class="toggle-switch">
+              <input type="checkbox" name="state" id="stateToggle" checked onchange="updateStatusLabel()" />
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-label">Activate registration</span>
+            <span class="toggle-status active" id="statusLabel">Active</span>
+          </div>
+          <div class="form-help">
+            Active records are available in the system
+          </div>
+        </div>
+
+        <div class="button-group">
+          <a href="/generic" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-primary">Create record</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function updateStatusLabel() {
+      const toggle = document.getElementById("stateToggle");
+      const label = document.getElementById("statusLabel");
+
+      if (toggle.checked) {
+        label.textContent = "Active";
+        label.className = "toggle-status active";
+      } else {
+        label.textContent = "Inactive";
+        label.className = "toggle-status inactive";
+      }
+    }
+  </script>
+</body>
+
+</html>

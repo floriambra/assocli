@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Delete GENERIC - ASSO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">ASSO</div>
+    <a href="/generic" class="nav-btn">Home</a>
+  </header>
+
+  <div class="container">
+    {% if success %}
+    <div class="success-message">
+      <div class="icon">✅</div>
+      <h3>Registration Deleted!</h3>
+      <p>The record has been successfully removed from the system!</p>
+      <div class="success-actions">
+        <a href="/generic" class="btn btn-secondary">Home</a>
+        <a href="/generic/delete" class="btn btn-danger">Delete another</a>
+      </div>
+    </div>
+    {% elif not item %}
+    <div class="search-section">
+      <h1>🗑️ Delete Registry</h1>
+      <p>Enter the ID of the record you wish to delete</p>
+
+      <form class="search-form" action="/generic/delete" method="GET">
+        <div class="search-input-wrapper">
+          <span class="search-icon">🔎</span>
+          <input type="number" name="id" class="search-input" placeholder="Enter the ID (ej: 1, 2, 3...)" required
+            min="1" />
+        </div>
+        <button type="submit" class="search-btn">Search</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="confirm-section">
+      <div class="confirm-header">
+        <div class="warning-icon">⚠️</div>
+        <h2>You're sure?</h2>
+        <p>You are about to delete the following record</p>
+      </div>
+
+      <div class="item-preview">
+        <div class="preview-field">
+          <span class="preview-label">ID:</span>
+          <span class="preview-value preview-id">#{{ item.id }}</span>
+        </div>
+        <div class="preview-field">
+          <span class="preview-label">Name:</span>
+          <span class="preview-value">{{ item.name }}</span>
+        </div>
+        <div class="preview-field">
+          <span class="preview-label">State:</span>
+          <span class="preview-value">
+            {% if item.state %}
+            <span class="status active">Active</span>
+            {% else %}
+            <span class="status inactive">Inactive</span>
+            {% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="warning-message">
+        <div class="icon">⚠️</div>
+        <div class="text">
+          <strong>¡Warning!</strong>
+          This action cannot be undone. Once deleted, the record will be
+          permanently removed from the system.
+        </div>
+      </div>
+
+      <div class="button-group">
+        <a href="/generic" class="btn btn-secondary">Cancel</a>
+        <a href="/generic/delete?id={{ item.id }}&confirm=true" class="btn btn-danger">🗑️ Yes, Deleted</a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</body>
+
+</html>

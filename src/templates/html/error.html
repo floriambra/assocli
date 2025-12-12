@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Error - ASSO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Righteous&family=Comfortaa:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+
+<body>
+  <header class="header">
+    <div class="logo">ASSO</div>
+  </header>
+  <div class="error-container">
+    <div class="error-card">
+      <div class="error-icon">
+        {% if status >= 500 %} 🌵 {% else %} 🍂 {% endif %}
+      </div>
+
+      <div class="error-code">{{ status }}</div>
+
+      <h1 class="error-title">
+        {% if status == 400 %} Invalid Application {% elif status == 401 %}
+        Unauthorized Access {% elif status == 404 %} Resource Not Found {%
+        elif status >= 500 %} Internal Server Error {% else %} Something went
+        wrong {% endif %}
+      </h1>
+
+      {% if status == 400 and detail %}
+      <p class="error-message">
+        {% if detail | length > 0 %} The server could not process the request.
+        <br />
+        <span style="font-size: 0.9em; color: #fca5a5">{{ detail }}</span>
+        {% endif %}
+      </p>
+      {% endif %}
+
+      <div class="button-group">
+        <a href="javascript:history.back()" class="btn btn-secondary">← Return</a>
+        <a href="/" class="btn btn-primary">🏠 Go to start</a>
+        <button onclick="location.reload()" class="btn btn-secondary">
+          🔄 Retry
+        </button>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
