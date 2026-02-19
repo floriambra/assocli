@@ -19,6 +19,7 @@ pub mod command_model {
         Run { project: String },
         Release { project: String },
         Module { name: String, project: String },
+        Config { module: String, project: String },
         Info,
     }
 }

@@ -3,13 +3,13 @@ use crate::utils::common::{
 };
 use console::style;
 
-pub struct NewModule {
+pub struct Module {
     pub module_path: std::path::PathBuf,
     pub project_path: std::path::PathBuf,
     pub name_module: String,
 }
 
-impl NewModule {
+impl Module {
     pub fn new(
         module_path: std::path::PathBuf,
         project_path: std::path::PathBuf,

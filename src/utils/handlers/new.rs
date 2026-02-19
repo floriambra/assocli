@@ -1,7 +1,7 @@
 use crate::shared::global::PROJECT_PATH;
 use crate::utils::common::remove_directory::delete_folder;
 use crate::utils::{
-    command::new_project::add_project::NewProject, common::clear_terminal::clear_terminal,
+    command::new_project::add_project::Project, common::clear_terminal::clear_terminal,
 };
 use console::style;
 use dialoguer::Confirm;
@@ -11,7 +11,7 @@ pub fn handle_new(project_name: &str) {
     let path_home = PROJECT_PATH.as_deref();
 
     if let Some(_path) = path_home {
-        let mut new_project = NewProject::new(_path.to_path_buf(), PathBuf::new());
+        let mut new_project = Project::new(_path.to_path_buf(), PathBuf::new());
 
         let confirmed = Confirm::new()
             .with_prompt(

@@ -2,6 +2,13 @@ use console::style;
 use std::process::Command;
 
 pub fn add_dependency(arg: &str, features: Option<&str>, path: &str) {
+    println!(
+        "{}",
+        style(format!("  Adding dependencies {arg}....."))
+            .cyan()
+            .bold()
+    );
+    std::thread::sleep(std::time::Duration::from_secs(1));
     let mut command = Command::new("cargo");
 
     command.arg("add").arg(arg);

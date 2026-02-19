@@ -7,13 +7,13 @@ use crate::utils::common::{
 };
 use console::style;
 
-pub struct NewTemplate {
+pub struct Template {
     pub module_path: std::path::PathBuf,
     pub project_path: std::path::PathBuf,
     pub name_module: String,
 }
 
-impl NewTemplate {
+impl Template {
     pub fn new(
         module_path: std::path::PathBuf,
         project_path: std::path::PathBuf,
@@ -135,7 +135,10 @@ impl NewTemplate {
         );
         std::thread::sleep(std::time::Duration::from_secs(1));
 
-        create_file(path_template_shared.join("mod.rs"), Some("pub mod engine;"));
+        create_file(
+            &path_template_shared.join("mod.rs"),
+            Some("pub mod engine;"),
+        );
 
         load_template_arg(
             "html/index.html",

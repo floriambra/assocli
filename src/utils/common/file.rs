@@ -1,3 +1,9 @@
+use std::{
+    fs::OpenOptions,
+    io::{BufRead, BufReader, Read, Write},
+    path::PathBuf,
+};
+
 use console::style;
 
 pub fn load_template(from: &str, to: &std::path::PathBuf) {
@@ -153,6 +159,158 @@ pub fn modify_file(path: &std::path::PathBuf, origin_content: &str, modified_con
             .green()
             .bold()
     );
+}
+
+pub fn verify_content_on_file(path: &std::path::PathBuf, content: &str) -> bool {
+    match OpenOptions::new().read(true).open(path) {
+        Ok(file) => {
+            let reader = std::io::BufReader::new(file);
+
+            for line in reader.lines() {
+                let content_line = line.unwrap_or("".to_string());
+                if content_line.contains(content) {
+                    println!(
+                        "{}",
+                        style(format!(
+                            "  {} already exists in {}",
+                            content,
+                            path.display()
+                        ))
+                        .yellow()
+                        .bold()
+                    );
+
+                    return true;
+                }
+            }
+
+            false
+        }
+        Err(_) => {
+            eprintln!(
+                "{}",
+                style(format!("  Error reading file in path {}", path.display()))
+                    .red()
+                    .bold()
+            );
+
+            std::process::exit(1)
+        }
+    }
+}
+
+pub fn concatenate_content(path: &PathBuf, mut content: String) {
+    match OpenOptions::new().read(true).write(true).open(path) {
+        Ok(file) => {
+            let mut reader = BufReader::new(file);
+            let mut old_content = String::new();
+            if reader.read_to_string(&mut old_content).is_ok() {
+                content.push_str(&old_content);
+                println!(
+                    "{}",
+                    style(format!(
+                        "  A content has been concatenated in .{}",
+                        path.display()
+                    ))
+                    .green()
+                    .bold()
+                );
+            } else {
+                eprintln!(
+                    "{}",
+                    style(format!(
+                        "  Error concatenating content in {}",
+                        path.display()
+                    ))
+                    .red()
+                    .bold()
+                );
+
+                std::process::exit(1)
+            }
+        }
+        Err(_) => {
+            eprintln!(
+                "{}",
+                style(format!("  Error reading file in path {}", path.display()))
+                    .red()
+                    .bold()
+            );
+
+            std::process::exit(1)
+        }
+    }
+
+    match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .truncate(true)
+        .open(path)
+    {
+        Ok(mut file) => {
+            if file.write_all(content.as_bytes()).is_ok() {
+                println!(
+                    "{}",
+                    style(format!("  File {} rewritten correctly", path.display()))
+                        .green()
+                        .bold()
+                );
+            } else {
+                eprintln!(
+                    "{}",
+                    style(format!("  Error rewriting file {}", path.display()))
+                        .red()
+                        .bold()
+                );
+
+                std::process::exit(1)
+            }
+        }
+        Err(_) => {
+            eprintln!(
+                "{}",
+                style(format!("  Error reading file in path {}", path.display()))
+                    .red()
+                    .bold()
+            );
+
+            std::process::exit(1)
+        }
+    }
+}
+
+pub fn delete_file_content(path: &PathBuf) {
+    match OpenOptions::new()
+        .read(true)
+        .write(true)
+        .truncate(true)
+        .open(path)
+    {
+        Ok(_) => {
+            println!(
+                "{}",
+                style(format!(
+                    "  File contents have been deleted {}",
+                    path.display()
+                ))
+                .yellow()
+                .bold()
+            );
+        }
+        Err(_) => {
+            eprintln!(
+                "{}",
+                style(format!(
+                    "  Error deleting file contents {}",
+                    path.display()
+                ))
+                .red()
+                .bold()
+            );
+
+            std::process::exit(1)
+        }
+    }
 }
 
 fn capitalize_first(s: &str) -> String {

@@ -28,6 +28,10 @@ pub fn commands() {
             module::handler_module(name, project);
         }
 
+        Commands::Config { module, project } => {
+            config::handler_config(module, project);
+        }
+
         Commands::Info => {
             println!(
                 "{}",

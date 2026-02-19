@@ -8,12 +8,12 @@ use crate::utils::common::{
 use console::style;
 
 #[derive(Debug, Clone)]
-pub struct NewProject {
+pub struct Project {
     pub path: std::path::PathBuf,
     pub project_path: std::path::PathBuf,
 }
 
-impl NewProject {
+impl Project {
     pub fn new(path: std::path::PathBuf, project_path: std::path::PathBuf) -> Self {
         Self { path, project_path }
     }
@@ -152,7 +152,7 @@ impl NewProject {
                     );
                 }
 
-                create_file(std::path::PathBuf::new().join(mod_rs_path_str), None);
+                create_file(&std::path::PathBuf::new().join(mod_rs_path_str), None);
             }
 
             let mod_file_path = app_path.join("mod.rs");
@@ -160,7 +160,7 @@ impl NewProject {
 
             std::thread::sleep(std::time::Duration::from_secs(5));
 
-            create_file(mod_file_path, Some(CONTENT));
+            create_file(&mod_file_path, Some(CONTENT));
 
             println!(
                 "{}",
@@ -236,7 +236,7 @@ impl NewProject {
         std::thread::sleep(std::time::Duration::from_secs(1));
 
         if mod_rs_path.exists() {
-            create_file(mod_rs_path, Some(CONTENT));
+            create_file(&mod_rs_path, Some(CONTENT));
         } else {
             eprintln!(
                 "{}",
@@ -278,7 +278,7 @@ impl NewProject {
 
             load_template("validation.rs", &path_common.join("validation.rs"));
 
-            create_file(path_common.join("mod.rs"), Some(CONTENT));
+            create_file(&path_common.join("mod.rs"), Some(CONTENT));
 
             overwrite_file(&path_shared.join("mod.rs"), "pub mod common;\n");
         }
@@ -313,7 +313,7 @@ impl NewProject {
 
             let path_mod_state = path_state.join("mod.rs");
 
-            create_file(path_mod_state, Some("pub mod state;\n"));
+            create_file(&path_mod_state, Some("pub mod state;\n"));
 
             overwrite_file(&path_shared.join("mod.rs"), "pub mod state;\n");
         }
@@ -347,7 +347,7 @@ impl NewProject {
             std::process::exit(1)
         }
 
-        create_file(env_path, Some(CONTENT));
+        create_file(&env_path, Some(CONTENT));
     }
 
     pub fn create_main_rs(&self) {
