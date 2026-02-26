@@ -2,6 +2,8 @@ pub mod progress_bar {
     use console::style;
     use indicatif::{ProgressBar, ProgressStyle};
 
+    use crate::utils::common::logger::{logger_error, logger_info};
+
     pub fn start_progress(progress_bar: ProgressBar, message: String) {
         progress_bar.set_style(
             ProgressStyle::with_template("{spinner:.green} [{bar:40.cyan/blue}] {pos:>3}% {msg}")
@@ -23,17 +25,11 @@ pub mod progress_bar {
     pub fn progress_message_finish(progress_bar: ProgressBar, output: std::process::Output) {
         if output.status.success() {
             progress_bar.finish_with_message("\nProgress completed....");
-            println!(
-                "{}",
-                style("  Compilation completed successfully")
-                    .on_green()
-                    .bold()
-            )
+            logger_info("  Compilation completed successfully".to_string());
         } else {
             progress_bar.finish_with_message("\nProgress fault....");
             std::thread::sleep(std::time::Duration::from_secs(2));
-            eprintln!("{}", style("  Error during compilation.").red().bold());
-            std::process::exit(1)
+            logger_error("Error during compilation.".to_string());
         }
     }
 }

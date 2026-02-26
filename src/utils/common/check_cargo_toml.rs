@@ -1,5 +1,5 @@
 use crate::shared::global::PROJECT_PATH;
-use console::style;
+use crate::utils::common::logger::*;
 
 pub fn check_toml_project(name_project: &str) -> bool {
     let path = PROJECT_PATH.as_deref();
@@ -9,21 +9,12 @@ pub fn check_toml_project(name_project: &str) -> bool {
         let cargo_toml = dir_project.join("Cargo.toml");
 
         if !cargo_toml.exists() {
-            eprintln!(
-                "{}",
-                style("  Error: Cargo.toml file is not present in the project")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1);
+            logger_error("Cargo.toml file is not present in the project".to_string())
         }
 
         true
     } else {
-        eprintln!(
-            "{}",
-            style("  Error searching for project in team").red().bold()
-        );
+        logger_error("Error searching for project in team".to_string());
         false
     }
 }

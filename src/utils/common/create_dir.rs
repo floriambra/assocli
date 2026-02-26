@@ -1,20 +1,9 @@
-use console::style;
+use crate::utils::common::logger::*;
 
 pub fn create_dir(path: &std::path::PathBuf) {
     if std::fs::create_dir_all(path).is_err() {
-        eprintln!(
-            "{}",
-            style(format!("  Error creating directory {}", &path.display()))
-                .red()
-                .bold()
-        );
-        std::process::exit(1)
+        logger_error(format!("Error creating directory {}", &path.display()));
     }
 
-    println!(
-        "{}",
-        style(format!("  Created {} directory", &path.display()))
-            .cyan()
-            .bold()
-    );
+    logger_info(format!("  Created {} directory", &path.display()));
 }

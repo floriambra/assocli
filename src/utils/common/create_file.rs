@@ -1,5 +1,6 @@
-use console::style;
 use std::{fs, path::PathBuf};
+
+use crate::utils::common::logger::*;
 
 pub fn create_file(path: &PathBuf, content: Option<&str>) {
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -11,37 +12,20 @@ pub fn create_file(path: &PathBuf, content: Option<&str>) {
     }
 
     if path.exists() {
-        println!(
-            "{}",
-            style(format!(
-                "  File {} It already exists, omitting....",
-                name_file
-            ))
-            .yellow()
-            .bold()
-        );
+        logger_warning(format!(
+            "  File {} It already exists, omitting....",
+            name_file
+        ));
         return;
     }
 
     if let Some(affair) = content {
-        if fs::write(&path, affair).is_err() {
-            eprintln!(
-                "{}",
-                style(format!("  Error when writing {}", &path.display()))
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
+        if fs::write(path, affair).is_err() {
+            logger_error(format!("Error when writing {}", &path.display()));
         }
-    } else if fs::File::create(&path).is_err() {
-        eprintln!(
-            "{}",
-            style(format!("  Error creating file {}", &path.display()))
-                .red()
-                .bold()
-        );
-        std::process::exit(1)
+    } else if fs::File::create(path).is_err() {
+        logger_error(format!("Error creating file {}", &path.display()));
     }
 
-    println!("{}", style(format!("  Created: {path:?}")).green().bold());
+    logger_info(format!("  Created: {path:?}"));
 }

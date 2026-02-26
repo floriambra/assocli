@@ -1,13 +1,9 @@
-use console::style;
 use std::process::Command;
 
+use crate::utils::common::logger::*;
+
 pub fn add_dependency(arg: &str, features: Option<&str>, path: &str) {
-    println!(
-        "{}",
-        style(format!("  Adding dependencies {arg}....."))
-            .cyan()
-            .bold()
-    );
+    logger_debug(format!("  Adding dependencies {arg}....."));
     std::thread::sleep(std::time::Duration::from_secs(1));
     let mut command = Command::new("cargo");
 
@@ -22,30 +18,15 @@ pub fn add_dependency(arg: &str, features: Option<&str>, path: &str) {
 
     match status {
         Ok(status) if status.success() => {
-            println!(
-                "{}",
-                style(format!("  {arg} successfully added!"))
-                    .green()
-                    .bold()
-            );
+            logger_info(format!("  {arg} successfully added!"));
         }
         Ok(_) => {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  The installation failed {arg}. ¿you have installed 'cargo-edit'?"
-                ))
-                .yellow()
-                .bold()
-            );
+            logger_error(format!(
+                "  The installation failed {arg}. ¿you have installed 'cargo-edit'?"
+            ));
         }
         Err(err) => {
-            eprintln!(
-                "{}",
-                style(format!("  Error executing 'cargo add {arg}': {err}",))
-                    .red()
-                    .bold()
-            );
+            logger_error(format!("  Error executing 'cargo add {arg}': {err}"));
         }
     }
 }

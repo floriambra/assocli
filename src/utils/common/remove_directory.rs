@@ -1,4 +1,4 @@
-use console::style;
+use crate::utils::common::logger::{logger_error, logger_info};
 
 pub fn delete_folder(path: &std::path::PathBuf, name_directory: &str) {
     let command = std::process::Command::new("rm")
@@ -7,22 +7,11 @@ pub fn delete_folder(path: &std::path::PathBuf, name_directory: &str) {
         .status();
 
     if command.is_err() {
-        eprintln!(
-            "{}",
-            style(format!(
-                "  Command execution failed when trying to delete directory {}.",
-                name_directory
-            ))
-            .red()
-            .bold()
-        );
-        std::process::exit(1);
+        logger_error(format!(
+            "Command execution failed when trying to delete directory {}.",
+            name_directory
+        ));
     }
 
-    println!(
-        "{}",
-        style(format!("  Directory {} deleted", name_directory))
-            .yellow()
-            .bold()
-    );
+    logger_info(format!("  Directory {} deleted", name_directory));
 }

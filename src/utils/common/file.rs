@@ -4,7 +4,7 @@ use std::{
     path::PathBuf,
 };
 
-use console::style;
+use crate::utils::common::logger::*;
 
 pub fn load_template(from: &str, to: &std::path::PathBuf) {
     const CARGO_CARGO_MANIFEST_DIR: &str = env!("CARGO_MANIFEST_DIR");
@@ -15,16 +15,10 @@ pub fn load_template(from: &str, to: &std::path::PathBuf) {
     let from_path = root_path.join(from_path_name);
 
     if std::fs::copy(from_path, to).is_err() {
-        eprintln!(
-            "{}",
-            style(format!("  Error loading template {from}"))
-                .red()
-                .bold()
-        );
-        std::process::exit(1)
+        logger_error(format!("Error loading template {from}"));
     }
 
-    println!("{}", style(format!("  file {from} loaded")).green().bold());
+    logger_info(format!("  file {from} loaded"));
 }
 
 pub fn load_template_arg(from: &str, to: &std::path::PathBuf, name: &str) {
@@ -43,84 +37,41 @@ pub fn load_template_arg(from: &str, to: &std::path::PathBuf, name: &str) {
         content = content.replace("GENERIC", &struct_name);
 
         if std::fs::write(to, content).is_err() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error writing template to destination {}",
-                    to.display()
-                ))
-                .red()
-                .bold()
-            );
-            std::process::exit(1);
+            logger_error(format!(
+                "Error writing template to destination {}",
+                to.display()
+            ));
         }
 
-        println!(
-            "{}",
-            style(format!("  file {from} loaded as {struct_name}"))
-                .green()
-                .bold()
-        );
+        logger_info(format!("  file {from} loaded as {struct_name}"));
     } else {
-        eprintln!(
-            "{}",
-            style(format!("  Error read template content{from}"))
-                .red()
-                .bold()
-        );
-        std::process::exit(1);
+        logger_error(format!("Error read template content{from}"));
     }
 }
 
 pub fn overwrite_file(path: &std::path::PathBuf, content: &str) {
     if !path.exists() {
-        eprintln!(
-            "{}",
-            style(format!(
-                "  Error writing file, path {} does not exist",
-                path.display()
-            ))
-            .red()
-            .bold()
-        );
-        std::process::exit(1)
+        logger_error(format!(
+            "Error writing file, path {} does not exist",
+            path.display()
+        ));
     }
     let content_mod = std::fs::read_to_string(path);
 
     if content_mod.is_err() {
-        eprintln!(
-            "{}",
-            style(format!(
-                "  Failure to read the content of {}",
-                path.display()
-            ))
-            .red()
-            .bold()
-        );
-        std::process::exit(1)
+        logger_error(format!("Failure to read the content of {}", path.display()));
     }
 
     if let Ok(_content) = content_mod {
         let new_content = format!("{}\n{}", _content, content);
         if std::fs::write(path, new_content).is_err() {
-            eprintln!(
-                "{}",
-                style(format!("  The file writing failed {}", path.display()))
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
+            logger_error(format!("The file writing failed {}", path.display()));
         }
 
-        println!(
-            "{}",
-            style(format!(
-                "  File {} overwritten successfully",
-                path.display()
-            ))
-            .green()
-            .bold()
-        );
+        logger_info(format!(
+            "  File {} overwritten successfully",
+            path.display()
+        ));
     }
 
     std::thread::sleep(std::time::Duration::from_secs(1));
@@ -131,34 +82,16 @@ pub fn modify_file(path: &std::path::PathBuf, origin_content: &str, modified_con
         content = content.replace(origin_content, modified_content);
 
         if std::fs::write(path, content).is_err() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error loading new content in file error {}",
-                    path.display()
-                ))
-                .red()
-                .bold()
-            );
-            std::process::exit(1);
+            logger_error(format!(
+                "Error loading new content in file error {}",
+                path.display()
+            ));
         }
     } else {
-        eprintln!(
-            "{}",
-            style("  Error rewriting the error handling file")
-                .red()
-                .bold()
-        );
-
-        std::process::exit(1)
+        logger_error("Error rewriting the error handling file".to_string());
     }
 
-    println!(
-        "{}",
-        style(format!("  File {} modified successfully", path.display()))
-            .green()
-            .bold()
-    );
+    logger_info(format!("  File {} modified successfully", path.display()));
 }
 
 pub fn verify_content_on_file(path: &std::path::PathBuf, content: &str) -> bool {
@@ -169,32 +102,19 @@ pub fn verify_content_on_file(path: &std::path::PathBuf, content: &str) -> bool 
             for line in reader.lines() {
                 let content_line = line.unwrap_or("".to_string());
                 if content_line.contains(content) {
-                    println!(
-                        "{}",
-                        style(format!(
-                            "  {} already exists in {}",
-                            content,
-                            path.display()
-                        ))
-                        .yellow()
-                        .bold()
-                    );
-
+                    logger_warning(format!(
+                        "  {} already exists in {}",
+                        content,
+                        path.display()
+                    ));
                     return true;
                 }
             }
-
             false
         }
         Err(_) => {
-            eprintln!(
-                "{}",
-                style(format!("  Error reading file in path {}", path.display()))
-                    .red()
-                    .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!("  Error reading file in path {}", path.display()));
+            false
         }
     }
 }
@@ -206,38 +126,16 @@ pub fn concatenate_content(path: &PathBuf, mut content: String) {
             let mut old_content = String::new();
             if reader.read_to_string(&mut old_content).is_ok() {
                 content.push_str(&old_content);
-                println!(
-                    "{}",
-                    style(format!(
-                        "  A content has been concatenated in .{}",
-                        path.display()
-                    ))
-                    .green()
-                    .bold()
-                );
+                logger_info(format!(
+                    "  A content has been concatenated in .{}",
+                    path.display()
+                ));
             } else {
-                eprintln!(
-                    "{}",
-                    style(format!(
-                        "  Error concatenating content in {}",
-                        path.display()
-                    ))
-                    .red()
-                    .bold()
-                );
-
-                std::process::exit(1)
+                logger_error(format!("Error concatenating content in {}", path.display()));
             }
         }
         Err(_) => {
-            eprintln!(
-                "{}",
-                style(format!("  Error reading file in path {}", path.display()))
-                    .red()
-                    .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!("Error reading file in path {}", path.display()));
         }
     }
 
@@ -249,32 +147,13 @@ pub fn concatenate_content(path: &PathBuf, mut content: String) {
     {
         Ok(mut file) => {
             if file.write_all(content.as_bytes()).is_ok() {
-                println!(
-                    "{}",
-                    style(format!("  File {} rewritten correctly", path.display()))
-                        .green()
-                        .bold()
-                );
+                logger_info(format!("  File {} rewritten correctly", path.display()));
             } else {
-                eprintln!(
-                    "{}",
-                    style(format!("  Error rewriting file {}", path.display()))
-                        .red()
-                        .bold()
-                );
-
-                std::process::exit(1)
+                logger_error(format!("Error rewriting file {}", path.display()));
             }
         }
         Err(_) => {
-            eprintln!(
-                "{}",
-                style(format!("  Error reading file in path {}", path.display()))
-                    .red()
-                    .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!("Error reading file in path {}", path.display()));
         }
     }
 }
@@ -287,28 +166,13 @@ pub fn delete_file_content(path: &PathBuf) {
         .open(path)
     {
         Ok(_) => {
-            println!(
-                "{}",
-                style(format!(
-                    "  File contents have been deleted {}",
-                    path.display()
-                ))
-                .yellow()
-                .bold()
-            );
+            logger_warning(format!(
+                "  File contents have been deleted {}",
+                path.display()
+            ));
         }
         Err(_) => {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error deleting file contents {}",
-                    path.display()
-                ))
-                .red()
-                .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!("Error deleting file contents {}", path.display()));
         }
     }
 }

@@ -1,4 +1,4 @@
-use console::style;
+use crate::utils::common::logger::*;
 
 pub fn clear_terminal() {
     if cfg!(windows) {
@@ -7,13 +7,13 @@ pub fn clear_terminal() {
             .status();
 
         if clear.is_err() {
-            eprintln!("{}", style("Error process clear terminal").red().bold())
+            logger_error("Error process clear terminal".to_string());
         }
     } else {
         let clear = std::process::Command::new("clear").status();
 
         if clear.is_err() {
-            eprintln!("{}", style("Error process clear terminal").red().bold())
+            logger_error("Error process clear terminal".to_string());
         }
     }
 }
