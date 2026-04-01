@@ -1,279 +1,151 @@
 use crate::utils::common::{
-    add_dependency::add_dependency,
-    create_dir::create_dir,
-    create_file::create_file,
-    file::{load_template, overwrite_file},
+    add_dependency::add_dependency, check_path::{ check_directory, check_directory_existing, check_file_existing, check_project_path_existing }, create_dir::create_dir, create_file::create_file, file::{load_template, overwrite_file}, logger::*
 };
+use std::{path::PathBuf, thread};
 
-use console::style;
 
 #[derive(Debug, Clone)]
 pub struct Project {
-    pub path: std::path::PathBuf,
-    pub project_path: std::path::PathBuf,
+    pub home_path: PathBuf,
+    pub name_project: String,
 }
 
 impl Project {
-    pub fn new(path: std::path::PathBuf, project_path: std::path::PathBuf) -> Self {
-        Self { path, project_path }
+    pub fn new( project_path: PathBuf, name_project: &str) -> Self {
+        Self { home_path: project_path, name_project: name_project.to_string() }
     }
 
-    pub fn create_project(&mut self, name: &str) -> bool {
-        println!("📁 Creating project...");
+    pub fn create_project(&mut self) -> bool {
+        logger_info("📁 Creating project...".to_string());
 
-        let path = self.path.to_str().unwrap_or("");
-        let path_project = format!("{path}/{name}");
 
-        if std::path::Path::new(&path_project).exists() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  The project '{name}' already exists in '{path}'"
-                ))
-                .yellow()
-                .bold()
-            );
+        if !check_project_path_existing(&self.home_path.join(&self.name_project)) {
             return false;
         }
-
+        
+        let current_dir_project: String = format!("{}", self.home_path.display());
         let status = std::process::Command::new("cargo")
             .arg("new")
-            .arg(name)
-            .current_dir(path)
+            .arg(&self.name_project)
+            .current_dir(current_dir_project)
             .status();
 
         if let Err(err) = &status {
-            eprintln!(
-                "{}",
-                style(format!("  Error executing cargo new: {err}"))
-                    .red()
-                    .bold()
-            );
-            return false;
+            logger_error(format!("Error executing cargo new: {}",err));
         }
-
-        self.project_path = std::path::PathBuf::from(&path_project);
-
+        
         true
     }
 
     pub fn create_actix(&self) {
-        let cargo_toml_path = self.project_path.join("Cargo.toml");
+        let project_path = format!("{}",self.home_path.join(&self.name_project).display());
+        let cargo_toml_path = self.home_path.join(&self.name_project).join("Cargo.toml");
 
-        if let Some(project_path) = self.project_path.to_str() {
-            if !cargo_toml_path.exists() {
-                eprintln!(
-                    "{}",
-                    style(format!("  'Cargo.toml' was bot found in '{project_path}'",))
-                        .red()
-                        .bold()
-                );
-                std::process::exit(1)
-            }
+        logger_debug("🔍 Checking project Cargo...".to_string());
+        check_file_existing(&cargo_toml_path);
 
-            println!("{}", style("🔍 Checking project Cargo...").cyan().bold());
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
-            std::thread::sleep(std::time::Duration::from_secs(1));
+        logger_debug("  Adding 'axum' to the project...".to_string());
 
-            println!(
-                "{}",
-                style("  Adding 'axum' to the project...").blue().bold()
-            );
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("axum", Some("json"), &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("dotenvy", None, &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("serde", Some("derive"), &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("serde_json", None, &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("validator", Some("derive"), &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("tokio", Some("full"), &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("dotenvy", None, &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("tracing", None, &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        add_dependency("tower-http", Some("fs"), &project_path);
+        std::thread::sleep(std::time::Duration::from_secs(1));
 
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("axum", Some("json"), project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("dotenvy", None, project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("serde", Some("derive"), project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("serde_json", None, project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("validator", Some("derive"), project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("tokio", Some("full"), project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("dotenvy", None, project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("tracing", None, project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            add_dependency("tower-http", Some("fs"), project_path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
-
-            add_dependency(
-                "tracing-subscriber",
-                Some("env-filter,fmt,ansi"),
-                project_path,
-            );
-        } else {
-            eprintln!(
-                "{}",
-                style("  Error creating axum, problems with the project path.",)
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1);
-        }
+        add_dependency(
+            "tracing-subscriber",
+            Some("env-filter,fmt,ansi"),
+            &project_path,
+        );    
     }
 
     pub fn create_app_structure(&self) {
-        let src_path = self.project_path.join("src");
+        let src_path = self.home_path.join(&self.name_project).join("src");
         let app_path = src_path.join("app");
 
-        if let Some(project_path) = self.project_path.to_str() {
-            if !src_path.exists() {
-                eprintln!(
-                    "{}",
-                    style(format!(
-                        "  The src directory was not found in '{project_path}'",
-                    ))
-                    .red()
-                    .bold()
-                );
-                std::process::exit(1);
+        check_file_existing(&src_path);
+            
+        let subdirs = ["config", "module", "shared"];
+
+        for directory in subdirs {
+            thread::sleep(std::time::Duration::from_secs(1));
+            let path = app_path.join(directory);
+            let mod_rs_path = path.join("mod.rs");
+            let mod_rs_path_str = mod_rs_path.to_str().unwrap();
+
+            if check_directory(&path, directory) {
+                create_dir(&path.to_path_buf());
             }
-
-            let subdirs = ["config", "module", "shared"];
-
-            for dir in subdirs {
-                std::thread::sleep(std::time::Duration::from_secs(1));
-                let path = app_path.join(dir);
-                let mod_rs_path = path.join("mod.rs");
-                let mod_rs_path_str = mod_rs_path.to_str().unwrap();
-
-                if !path.exists() {
-                    create_dir(&path);
-                } else {
-                    println!(
-                        "{}",
-                        style(format!("  It already exists: {}", path.display()))
-                            .yellow()
-                            .bold()
-                    );
-                }
-
-                create_file(&std::path::PathBuf::new().join(mod_rs_path_str), None);
-            }
-
-            let mod_file_path = app_path.join("mod.rs");
-            const CONTENT: &str = "pub mod module;\npub mod shared;\npub mod config;\n";
-
-            std::thread::sleep(std::time::Duration::from_secs(5));
-
-            create_file(&mod_file_path, Some(CONTENT));
-
-            println!(
-                "{}",
-                style(format!(
-                    "  App structure created correctly in {}'",
-                    app_path.display()
-                ))
-                .cyan()
-                .bold()
-            );
-        } else {
-            eprintln!(
-                "{}",
-                style("  Error creating app structure, problems with the project path.",)
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1);
+                
+            create_file(&std::path::PathBuf::new().join(mod_rs_path_str), None);
         }
+
+        let mod_file_path = app_path.join("mod.rs");
+        const CONTENT: &str = "pub mod module;\npub mod shared;\npub mod config;\n";
+
+        thread::sleep(std::time::Duration::from_secs(5));
+
+        create_file(&mod_file_path, Some(CONTENT));
+
+        let app_path_string = app_path.display().to_string();
+        logger_info(format!("  App structure created correctly in {}", app_path_string));
     }
 
     pub fn create_mod_main(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating env rs,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
 
-        let path_directory_module = self.project_path.join("src/app/module");
+        let path_directory_module = self.home_path.join(&self.name_project).join("src/app/module");
 
         let path_module_main = path_directory_module.join("mod.rs");
 
         load_template("config_modules.rs", &path_module_main);
 
-        println!(
-            "{}",
-            style("  Main module configuration created").green().bold()
-        );
+        logger_info("  Main module configuration created".to_string());
     }
 
     pub fn create_env_rs(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating env rs,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
-
-        let config_dir = self.project_path.join("src/app/config");
+        
+        let config_dir = self.home_path.join(&self.name_project).join("src/app/config");
         let env_rs_path = config_dir.join("env.rs");
         let mod_rs_path = config_dir.join("mod.rs");
 
         const CONTENT: &str = "\npub mod env;";
+        
+        check_directory_existing(&config_dir);
+        
+        thread::sleep(std::time::Duration::from_secs(1));
 
-        if !config_dir.exists() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  The config folder was not found in {config_dir:?}"
-                ))
-                .red()
-                .bold()
-            );
-            std::process::exit(1)
+        if check_file_existing(&mod_rs_path) {
+            overwrite_file(&mod_rs_path, CONTENT);
         }
-        std::thread::sleep(std::time::Duration::from_secs(1));
-
-        if mod_rs_path.exists() {
-            create_file(&mod_rs_path, Some(CONTENT));
-        } else {
-            eprintln!(
-                "{}",
-                style("  Error: mod.rs path does not exist").red().bold()
-            );
-            std::process::exit(1)
-        }
-
+        
         load_template("env.rs", &env_rs_path);
     }
 
     pub fn create_files_common(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating files common,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
         const CONTENT: &str = "pub mod error;\npub mod validation;";
 
-        let path_shared = self.project_path.join("src/app/shared");
+        let path_shared = self.home_path.join(&self.name_project).join("src/app/shared");
         let path_common = path_shared.join("common");
 
-        create_dir(&path_common);
-
-        if !path_common.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating common files, problems with the state directory path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        } else {
+        if check_directory(&path_common, "common") {
+            create_dir(&path_common);
+            
             load_template("error.rs", &path_common.join("error.rs"));
 
             load_template("validation.rs", &path_common.join("validation.rs"));
@@ -281,34 +153,17 @@ impl Project {
             create_file(&path_common.join("mod.rs"), Some(CONTENT));
 
             overwrite_file(&path_shared.join("mod.rs"), "pub mod common;\n");
-        }
+        }      
     }
 
     pub fn create_files_state(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating files state,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
 
-        let path_shared = self.project_path.join("src/app/shared");
+        let path_shared = self.home_path.join(&self.name_project).join("src/app/shared");
         let path_state = path_shared.join("state");
 
-        create_dir(&path_state);
-
-        if !path_state.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating state files, problems with the state directory path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        } else {
+        if check_directory(&path_state, "state") {
+            create_dir(&path_state);
+            
             load_template("state.rs", &path_state.join("state.rs"));
 
             let path_mod_state = path_state.join("mod.rs");
@@ -320,77 +175,49 @@ impl Project {
     }
 
     pub fn create_env_file(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating env file,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
 
         const CONTENT: &str = r#"ADDRESS="0.0.0.0"
         PORT=3000
         "#;
 
-        let env_path = self.project_path.join(".env");
+        let env_path = self.home_path.join(&self.name_project).join(".env");
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
 
-        if env_path.exists() {
-            println!(
-                "{}",
-                style("  .env already exists, omitting...").yellow().bold()
-            );
-            std::thread::sleep(std::time::Duration::from_secs(1));
-            std::process::exit(1)
+        if !env_path.exists() {
+            create_file(&env_path, Some(CONTENT));
         }
 
-        create_file(&env_path, Some(CONTENT));
     }
 
     pub fn create_main_rs(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating main.rs file,problems with the project path")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
 
-        let main_path = self.project_path.join("src/main.rs");
+        let main_path = self.home_path.join(&self.name_project).join("src/main.rs");
 
         if main_path.exists() {
-            let _ = std::fs::remove_file(&main_path);
+            if std::fs::remove_file(&main_path).is_err() {
+                logger_error("Error deleting/restoring the main file".to_string());
+            }
         }
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
+        
         load_template("main.rs", &main_path);
 
-        println!(
-            "{}",
-            style("  main.rs created successfully").green().bold()
-        );
+        logger_info("  main.rs created successfully".to_string());
+        
     }
 
     pub fn add_root_template(&self) {
-        let static_path = self.project_path.join("templates/static");
+        let static_path = self.home_path.join(&self.name_project).join("templates/static");
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
 
         create_dir(&static_path);
 
         load_template("static/index.html", &static_path.join("index.html"));
         load_template("static/styles.css", &static_path.join("style.css"));
 
-        println!(
-            "{}",
-            style("  index.html in the root has been added")
-                .green()
-                .bold()
-        );
+        logger_info("  index.html in the root has been added".to_string());
     }
 }

@@ -1,5 +1,6 @@
-use crate::shared::global::PROJECT_PATH;
-use console::style;
+use crate::{shared::global::PROJECT_PATH, utils::common::{logger::*, check_path::*}};
+use std::thread;
+
 
 pub fn handler_run(name_project: &str) {
     run_cargo_command("run", None, name_project.to_string());
@@ -9,15 +10,12 @@ fn run_cargo_command(arg: &str, optional_arg: Option<&str>, name_project: String
     let path = PROJECT_PATH.as_deref();
 
     if let Some(_path) = path {
-        let dir_project = _path.to_path_buf().join(&name_project);
-        let cargo_toml = dir_project.join("Cargo.toml");
-
-        if !cargo_toml.exists() {
-            eprintln!("{}", style("  The project does not exist").red().bold());
-            std::process::exit(1);
-        }
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        let path_project = _path.to_path_buf().join(&name_project);
+        let cargo_toml = path_project.join("Cargo.toml");
+        
+        check_file_existing(&cargo_toml);
+        
+        thread::sleep(std::time::Duration::from_secs(1));
 
         let mut output = std::process::Command::new("cargo");
 
@@ -27,22 +25,16 @@ fn run_cargo_command(arg: &str, optional_arg: Option<&str>, name_project: String
             output.arg(arg);
         }
 
-        let command_result = output.current_dir(&dir_project).status();
+        let command_result = output.current_dir(&path_project).status();
 
         if let Ok(_status) = command_result {
             if !_status.success() {
-                eprintln!("{}", style(_status.to_string()).red().bold());
+                logger_warning(_status.to_string());
             }
         } else {
-            eprintln!(
-                "{}",
-                style("  Error trying to start the process").red().bold()
-            )
+            logger_error("Error trying to start the process".to_string());
         }
     } else {
-        eprintln!(
-            "{}",
-            style("  Error searching for project path").red().bold()
-        )
+        logger_error("Error searching for project path".to_string());
     }
 }

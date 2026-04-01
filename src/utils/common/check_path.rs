@@ -9,6 +9,13 @@ pub fn check_project_path(path: &Path) -> bool {
     true
 }
 
+pub fn check_project_path_existing(path: &Path) -> bool {
+    if path.exists() {
+        logger_error(format!("The project already exists {}", path.display()));
+    }
+    true
+}
+
 pub fn check_existing_module_path(path: &Path, name_module: &str) -> bool {
     if path.exists() {
         logger_error(format!("The module already exists {}", name_module));

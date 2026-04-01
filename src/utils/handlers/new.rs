@@ -1,18 +1,28 @@
 use crate::shared::global::PROJECT_PATH;
-use crate::utils::common::remove_directory::delete_folder;
+use crate::utils::common::{
+    remove_directory::delete_folder, 
+    logger::{logger_error, logger_info, logger_warning},
+    create_dir::create_dir,
+    check_path::check_directory
+};
 use crate::utils::{
     command::new_project::add_project::Project, common::clear_terminal::clear_terminal,
 };
 use console::style;
 use dialoguer::Confirm;
-use std::{path::PathBuf, process, thread, time::Duration};
+use std::{thread, time::Duration};
 
 pub fn handle_new(project_name: &str) {
     let path_home = PROJECT_PATH.as_deref();
-
-    if let Some(_path) = path_home {
-        let mut new_project = Project::new(_path.to_path_buf(), PathBuf::new());
-
+    
+    if let Some(_path_home) = path_home {
+        
+        if check_directory(_path_home, "Asso") {
+            create_dir(&_path_home.to_path_buf());
+        }
+        
+        let mut new_project = Project::new(_path_home.to_path_buf(), project_name);
+        
         let confirmed = Confirm::new()
             .with_prompt(
                 style(format!(
@@ -25,26 +35,16 @@ pub fn handle_new(project_name: &str) {
             .default(true)
             .interact()
             .unwrap_or_else(|err| {
-                eprintln!(
-                    "{}",
-                    style(format!("  Error creating project: {err}."))
-                        .red()
-                        .bold()
-                );
-                process::exit(1)
+                logger_error(format!("Error creating project: {err}"));
+                false
             });
 
         if confirmed {
-            println!(
-                "{}",
-                style(format!(" Creating the project '{project_name}'. "))
-                    .on_white()
-                    .bold()
-            );
+            logger_info(format!(" Creating the project '{project_name}'."));
 
             thread::sleep(Duration::from_secs(1));
 
-            if new_project.create_project(project_name) {
+            if new_project.create_project() {
                 new_project.create_actix();
                 new_project.create_app_structure();
                 new_project.create_mod_main();
@@ -55,22 +55,15 @@ pub fn handle_new(project_name: &str) {
                 new_project.create_main_rs();
                 new_project.add_root_template();
                 clear_terminal();
-                println!("{}", style("  Project created.").on_bright().bold());
+                logger_info("  Project created.".to_string());
             } else {
-                //clear_terminal();
-                println!("{}", style("  Project not created.").red().bold());
-                delete_folder(&new_project.project_path, project_name);
+                logger_warning(format!("  Project not created."));
+                delete_folder(&new_project.home_path, project_name);
             }
         } else {
-            println!("{}", style("❌ Cancelled by the user.").red().bold());
+            logger_warning("❌ Cancelled by the user.".to_string());
         }
     } else {
-        eprintln!(
-            "{}",
-            style("  Error obtaining the system's HOME path.")
-                .red()
-                .bold()
-        );
-        process::exit(1)
+        logger_error("Error obtaining the system's HOME path.".to_string());
     }
 }

@@ -1,18 +1,16 @@
-use console::style;
+
+use crate::utils::common::{logger::{logger_error,logger_info}, check_path::check_directory,create_dir::create_dir};
 use once_cell::sync::Lazy;
+use std::{path::PathBuf,env::var};
 
-// Variable global de solo lectura
-pub static PROJECT_PATH: Lazy<Option<std::path::PathBuf>> = Lazy::new(|| {
-    let home_path = std::env::var("HOME");
+pub static PROJECT_PATH: Lazy<Option<PathBuf>> = Lazy::new(|| {
+    let var_home_path = var("HOME");
 
-    if let Ok(_path) = home_path {
-        let new_path = format!("{_path}/Asso");
-        Some(std::path::Path::new(&new_path).to_path_buf())
+    if let Ok(name_path) = var_home_path {
+        let main_project_path = PathBuf::new().join(&name_path).join("Asso");
+            Some(main_project_path)
     } else {
-        eprintln!(
-            "{}",
-            style("  Error in home enviroment variable").red().bold()
-        );
+        logger_error("Error in home enviroment variable".to_string());
         None
     }
 });

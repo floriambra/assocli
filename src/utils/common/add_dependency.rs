@@ -22,7 +22,7 @@ pub fn add_dependency(arg: &str, features: Option<&str>, path: &str) {
         }
         Ok(_) => {
             logger_error(format!(
-                "  The installation failed {arg}. ¿you have installed 'cargo-edit'?"
+                "The installation failed {arg}. ¿you have installed 'cargo-edit'?"
             ));
         }
         Err(err) => {
