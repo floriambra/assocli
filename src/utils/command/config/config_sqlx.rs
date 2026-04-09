@@ -62,8 +62,7 @@ impl Sqlx {
     pub fn adding_environment_variables(&self) {
         std::thread::sleep(std::time::Duration::from_secs(1));
         let path_enviroment_variables = self.module.project_path.join(".env");
-        let content = 
-            "DB_PASSWORD=6745YHDSDJ8923\nDB_NAME=asso\nDATABASE_URL=postgres://postgres:6745YHDSDJ8923@127.0.0.1/asso".to_string();
+        let content = "DB_PASSWORD=6745YHDSDJ8923\nDB_NAME=asso\nDATABASE_URL=postgres://postgres:6745YHDSDJ8923@127.0.0.1/asso".to_string();
 
         if verify_content_on_file(&path_enviroment_variables, "DATABASE_URL=postgres:") {
             return;

@@ -1,24 +1,17 @@
 use crate::utils::common::{
-    add_dependency::add_dependency,
-    create_dir::create_dir,
-    create_file::create_file,
-    file::{load_template, load_template_arg, modify_file, overwrite_file},
-    remove_directory::delete_folder,
+    add_dependency::add_dependency, check_path::*, create_dir::create_dir,
+    create_file::create_file, file::*, logger::*, remove_directory::delete_folder,
 };
-use console::style;
+use std::{fs, path::PathBuf, thread, time};
 
 pub struct Template {
-    pub module_path: std::path::PathBuf,
-    pub project_path: std::path::PathBuf,
+    pub module_path: PathBuf,
+    pub project_path: PathBuf,
     pub name_module: String,
 }
 
 impl Template {
-    pub fn new(
-        module_path: std::path::PathBuf,
-        project_path: std::path::PathBuf,
-        name_module: String,
-    ) -> Self {
+    pub fn new(module_path: PathBuf, project_path: PathBuf, name_module: String) -> Self {
         Self {
             module_path,
             project_path,
@@ -26,102 +19,50 @@ impl Template {
         }
     }
 
-    pub fn check_project_path(&self) {
-        if !self.project_path.exists() {
-            eprintln!(
-                "{}",
-                style("  Error creating module, project does not exist.")
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1)
-        }
-    }
-
-    pub fn add_dependency(&self) {
+    pub fn add_dependency_tera(&self) {
+        check_project_path(&self.project_path);
         let project_path = self.project_path.as_os_str().to_str();
 
         if let Some(path) = project_path {
             add_dependency("tera", None, path);
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            thread::sleep(time::Duration::from_secs(1));
         } else {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error reading project path {}",
-                    self.project_path.display()
-                ))
-                .red()
-                .bold()
-            );
-            std::process::exit(1)
+            logger_error(format!(
+                "Error reading project path {}",
+                self.project_path.display()
+            ));
         }
     }
 
     pub fn create_folder_module(&self) {
-        if self.module_path.exists() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error creating directory, a module with the name already exists {}",
-                    self.name_module
-                ))
-                .red()
-                .bold()
-            );
-            std::process::exit(1)
-        }
+        check_project_path(&self.project_path);
         create_dir(&self.module_path);
     }
 
     pub fn create_dir_templates(&self) {
-        let path_dir_template = self.project_path.join("templates").join(&self.name_module);
+        check_module_path(&self.module_path);
 
-        let path_template_shared = self.project_path.join("src/app/shared/template");
-
-        if path_dir_template.exists() {
-            println!(
-                "{}",
-                style("  Template directory already exists. Continue...")
-                    .yellow()
-                    .bold()
-            );
-            return;
+        if check_directory(
+            &self.project_path.join("templates").join(&self.name_module),
+            "template",
+        ) {
+            create_dir(&self.project_path.join("templates").join(&self.name_module));
         }
 
-        create_dir(&path_dir_template);
-
-        if path_template_shared.exists() {
-            println!(
-                "{}",
-                style("  Template directory already exists. Continue...")
-                    .yellow()
-                    .bold()
-            );
-            return;
+        if check_directory(
+            &self.project_path.join("src/app/shared/template"),
+            "template/shared",
+        ) {
+            create_dir(&self.project_path.join("src/app/shared/template"));
         }
 
-        create_dir(&path_template_shared);
+        if check_directory(&self.project_path.join("templates/static"), "static") {
+            create_dir(&self.project_path.join("templates/static"));
+        }
     }
 
-    pub fn create_dir_static_file(&self) {
-        let path_dir_static = self.project_path.join("templates/static");
-
-        if path_dir_static.exists() {
-            println!(
-                "{}",
-                style("  Static directory already exists. Continue...")
-                    .yellow()
-                    .bold()
-            );
-            return;
-        }
-
-        create_dir(&path_dir_static);
-    }
-
-    pub fn create_templates_files(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    pub fn load_templates_files(&self) {
+        thread::sleep(time::Duration::from_secs(1));
 
         let path_dir_template = self.project_path.join("templates");
         let path_dir_template_module = path_dir_template.join(&self.name_module);
@@ -133,7 +74,7 @@ impl Template {
             &path_template_shared.join("engine.rs"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         create_file(
             &path_template_shared.join("mod.rs"),
@@ -145,94 +86,98 @@ impl Template {
             &path_dir_template_module.join("index.html"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         load_template_arg(
             "html/create.html",
             &path_dir_template_module.join("create.html"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         load_template_arg(
             "html/delete.html",
             &path_dir_template_module.join("delete.html"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         load_template_arg(
             "html/search.html",
             &path_dir_template_module.join("search.html"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         load_template_arg(
             "html/update.html",
             &path_dir_template_module.join("update.html"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
-        if !path_dir_template.join("error.html").exists() {
+        if check_file(&path_dir_template.join("error.html")) {
             load_template("html/error.html", &path_dir_template.join("error.html"));
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            thread::sleep(time::Duration::from_secs(1));
         }
 
-        if !path_dir_static_files.join("style.css").exists() {
+        if check_file(&path_dir_static_files.join("style.css")) {
             load_template(
                 "static/styles.css",
                 &path_dir_static_files.join("style.css"),
             );
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            thread::sleep(time::Duration::from_secs(1));
         }
     }
 
     pub fn create_module_files(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         load_template_arg(
             "models.rs",
             &self.module_path.join("models.rs"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
         load_template_arg(
             "repositories.rs",
             &self.module_path.join("repositories.rs"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
         load_template_arg(
             "services.rs",
             &self.module_path.join("services.rs"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
         load_template_arg(
             "handlers_template.rs",
             &self.module_path.join("handlers.rs"),
             &self.name_module,
         );
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
         load_template_arg(
             "config_mod_template.rs",
             &self.module_path.join("mod.rs"),
             &self.name_module,
         );
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        //load_template("main.rs", path_module);
+        thread::sleep(std::time::Duration::from_secs(1));
 
-        println!("{}", style(" module created successfully").green().bold());
+        self.inject_module_main();
+        self.reconfigure_file_handler_error();
+        self.reconfigure_file_state();
+        self.reconfigure_module_shared();
+
+        logger_info(" module created successfully".to_string());
     }
 
-    pub fn reconfigure_file_handler_error(&self) {
-        println!("{}", style("  Configuring file errors...").blue().bold());
-        std::thread::sleep(std::time::Duration::from_secs(2));
+    fn reconfigure_file_handler_error(&self) {
+        logger_debug("  Configuring file errors...".to_string());
+        thread::sleep(std::time::Duration::from_secs(2));
 
-        let path_file_error = std::path::PathBuf::new().join(format!(
+        let path_file_error = PathBuf::new().join(format!(
             "{}/src/app/shared/common/error.rs",
             &self.project_path.display()
         ));
@@ -271,7 +216,7 @@ use tera::{Context, Tera};"###
         }
         }"###;
 
-        if let Ok(content) = std::fs::read_to_string(&path_file_error) {
+        if let Ok(content) = fs::read_to_string(&path_file_error) {
             if !content.contains(r###"use tera::{Context, Tera};"###) {
                 modify_file(&path_file_error, &add_dependency.0, &add_dependency.1);
             }
@@ -280,25 +225,18 @@ use tera::{Context, Tera};"###
                 overwrite_file(&path_file_error, add_content);
             }
         } else {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error reading content {}",
-                    &path_file_error.display()
-                ))
-                .red()
-                .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!(
+                "Error reading content {}",
+                &path_file_error.display()
+            ));
         }
     }
 
-    pub fn reconfigure_file_state(&self) {
-        println!("{}", style("  Configuring file state...").blue().bold());
-        std::thread::sleep(std::time::Duration::from_secs(2));
+    fn reconfigure_file_state(&self) {
+        logger_debug("  Configuring file state...".to_string());
+        thread::sleep(std::time::Duration::from_secs(2));
 
-        let path_file_state = std::path::PathBuf::new().join(format!(
+        let path_file_state = PathBuf::new().join(format!(
             "{}/src/app/shared/state/state.rs",
             &self.project_path.display()
         ));
@@ -332,31 +270,24 @@ impl AppState {
                 .to_string(),
         );
 
-        if let Ok(content) = std::fs::read_to_string(&path_file_state) {
+        if let Ok(content) = fs::read_to_string(&path_file_state) {
             if !content.contains(r###"use crate::app::shared::template::engine::TemplateEngine;"###)
             {
                 modify_file(&path_file_state, &add_dependency.0, &add_dependency.1);
             }
         } else {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error reading content {}",
-                    &path_file_state.display()
-                ))
-                .red()
-                .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!(
+                "Error reading content {}",
+                &path_file_state.display()
+            ));
         }
     }
 
-    pub fn reconfigure_module_shared(&self) {
-        println!("{}", style("  Configuring module shared...").blue().bold());
-        std::thread::sleep(std::time::Duration::from_secs(2));
+    fn reconfigure_module_shared(&self) {
+        logger_debug("  Configuring module shared...".to_string());
+        thread::sleep(std::time::Duration::from_secs(2));
 
-        let path_mod_shared = std::path::PathBuf::new().join(format!(
+        let path_mod_shared = PathBuf::new().join(format!(
             "{}/src/app/shared/mod.rs",
             &self.project_path.display()
         ));
@@ -368,38 +299,26 @@ pub mod template;"###
                 .to_string(),
         );
 
-        if let Ok(content) = std::fs::read_to_string(&path_mod_shared) {
+        if let Ok(content) = fs::read_to_string(&path_mod_shared) {
             if !content.contains(r###"pub mod template;"###) {
                 modify_file(&path_mod_shared, &add_content.0, &add_content.1);
             }
         } else {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "  Error reading content {}",
-                    &path_mod_shared.display()
-                ))
-                .red()
-                .bold()
-            );
-
-            std::process::exit(1)
+            logger_error(format!(
+                "Error reading content {}",
+                &path_mod_shared.display()
+            ));
         }
     }
 
-    pub fn inject_module_main(&self) {
-        println!(
-            "{}",
-            style(format!(
-                "  Configuring the implementation of the {} module...",
-                &self.name_module
-            ))
-            .blue()
-            .bold()
-        );
-        std::thread::sleep(std::time::Duration::from_secs(2));
+    fn inject_module_main(&self) {
+        logger_debug(format!(
+            "  Configuring the implementation of the {} module...",
+            &self.name_module
+        ));
+        thread::sleep(std::time::Duration::from_secs(2));
 
-        let path_module_main = std::path::PathBuf::new().join(format!(
+        let path_module_main = PathBuf::new().join(format!(
             "{}/src/app/module/mod.rs",
             &self.project_path.display()
         ));
@@ -415,48 +334,29 @@ pub mod template;"###
             format!("mod {};\nuse axum::Router;", self.name_module),
         );
 
-        let content_module_main = std::fs::read_to_string(&path_module_main);
+        let content_module_main = fs::read_to_string(&path_module_main);
 
         if let Ok(mut content) = content_module_main {
             if content.contains(&self.name_module) {
-                eprintln!(
-                    "{}",
-                    style(format!(
-                        "  The module files were deleted, but it is still configured in the {}.",
-                        self.project_path.join("src/app/module/mod.rs").display()
-                    ))
-                    .red()
-                    .bold()
-                );
                 delete_folder(&self.project_path.join("src/app/module"), &self.name_module);
-                std::process::exit(1);
+                logger_error(format!(
+                    "The module files were deleted, but it is still configured in the {}.",
+                    self.project_path.join("src/app/module/mod.rs").display()
+                ));
             }
 
             content = content.replace("Router::new()", &content_new_module.0);
 
             content = content.replace("use axum::Router;", &content_new_module.1);
 
-            if std::fs::write(&path_module_main, content).is_err() {
-                eprintln!(
-                    "{}",
-                    style(format!(
-                        "  Error loading new content in main module {}",
-                        path_module_main.display()
-                    ))
-                    .red()
-                    .bold()
-                );
-                std::process::exit(1);
+            if fs::write(&path_module_main, content).is_err() {
+                logger_error(format!(
+                    "Error loading new content in main module {}",
+                    path_module_main.display()
+                ));
             }
         } else {
-            eprintln!(
-                "{}",
-                style("  Error injecting module into main configuration")
-                    .red()
-                    .bold()
-            );
-
-            std::process::exit(1)
+            logger_error("Error injecting module into main configuration".to_string());
         }
     }
 }

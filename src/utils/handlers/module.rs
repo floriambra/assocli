@@ -2,38 +2,22 @@ use crate::{
     shared::global::PROJECT_PATH,
     utils::{
         command::{api::type_api::Module, template::type_template::Template},
-        common::selection_type::choose_module_type,
+        common::{check_path::check_project_path, logger::*, selection_type::choose_module_type},
     },
 };
 use console::style;
+use std::path::PathBuf;
 
 pub fn handler_module(name_module: &str, name_project: &str) {
-    let mut path_project = std::path::PathBuf::new();
+    let mut path_project = PathBuf::new();
 
-    if let Some(_path) = PROJECT_PATH.as_deref() {
-        path_project = std::path::PathBuf::from(_path).join(name_project);
-
-        println!("{}", path_project.display());
-        if !path_project.exists() {
-            eprintln!(
-                "{}",
-                style(format!(
-                    "The project {} does not exist to create module {}",
-                    name_project, name_module
-                ))
-                .on_white()
-                .bold()
-            );
-            std::process::exit(1)
-        }
+    if let Some(path) = PROJECT_PATH.as_deref() {
+        path_project = path_project.join(path).join(name_project);
     } else {
-        eprintln!(
-            "{}",
-            style("  Error creating project path to query")
-                .red()
-                .bold()
-        )
+        logger_error("Error creating project path to query".to_string());
     }
+
+    check_project_path(&path_project);
 
     match choose_module_type(name_module) {
         "API" => {
@@ -57,19 +41,13 @@ pub fn handler_module(name_module: &str, name_project: &str) {
                 name_module.to_string(),
             );
 
-            new_module_template.check_project_path();
-            new_module_template.add_dependency();
+            new_module_template.add_dependency_tera();
             new_module_template.create_folder_module();
             new_module_template.create_dir_templates();
-            new_module_template.create_dir_static_file();
-            new_module_template.create_templates_files();
+            new_module_template.load_templates_files();
             new_module_template.create_module_files();
-            new_module_template.inject_module_main();
-            new_module_template.reconfigure_file_handler_error();
-            new_module_template.reconfigure_file_state();
-            new_module_template.reconfigure_module_shared();
         }
-        _ => println!("No pasa nada"),
+        _ => println!("La opcion no existe, intente de nuevo..."),
     }
 
     /*

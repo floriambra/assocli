@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::utils::common::logger::*;
+use crate::utils::common::{check_path, logger::*};
 
 pub fn check_project_path(path: &Path) -> bool {
     if !path.exists() {
@@ -48,6 +48,14 @@ pub fn check_directory_existing(path: &Path) -> bool {
 pub fn check_file_existing(path: &Path) -> bool {
     if !path.exists() {
         logger_error(format!("The file {} does not exist", path.display()));
+    }
+    true
+}
+
+pub fn check_file(path: &Path) -> bool {
+    if path.exists() {
+        logger_warning(format!("The file {} already exists", path.display()));
+        return false;
     }
     true
 }

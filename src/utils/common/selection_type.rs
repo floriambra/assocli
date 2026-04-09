@@ -1,5 +1,5 @@
+use crate::utils::common::logger::logger_error;
 use dialoguer::{Select, console::style};
-use std::process;
 
 const MODULE_TYPES: &[&str] = &["API", "Template", "GraphQL", "MCP"];
 const CONFIG_TYPES: &[&str] = &["sqlx", "mongodb", "reddis", "autentication"];
@@ -13,20 +13,14 @@ pub fn choose_module_type(module_name: &str) -> &'static str {
                 module_name
             ))
             .blue()
-            .bold()
             .to_string(),
         )
         .items(MODULE_TYPES)
         .default(0)
         .interact()
         .unwrap_or_else(|err| {
-            eprintln!(
-                "{}",
-                style(format!(" Error selecting module type: {err}"))
-                    .red()
-                    .bold()
-            );
-            process::exit(1);
+            logger_error(format!("Error selecting module type: {}", err));
+            1
         });
 
     MODULE_TYPES[selection]
@@ -40,20 +34,14 @@ pub fn choose_your_configuration_type(module_name: &str) -> &'static str {
                 module_name
             ))
             .blue()
-            .bold()
             .to_string(),
         )
         .items(CONFIG_TYPES)
         .default(0)
         .interact()
         .unwrap_or_else(|err| {
-            eprintln!(
-                "{}",
-                style(format!(" Error selecting config type: {err}"))
-                    .red()
-                    .bold()
-            );
-            process::exit(1);
+            logger_error(format!("Error selecting config type: {}", err));
+            1
         });
 
     CONFIG_TYPES[selection]
@@ -71,13 +59,8 @@ pub fn choose_types_relational_bases() -> &'static str {
         .default(0)
         .interact()
         .unwrap_or_else(|err| {
-            eprintln!(
-                "{}",
-                style(format!(" Error selecting config type: {err}"))
-                    .red()
-                    .bold()
-            );
-            process::exit(1);
+            logger_error(format!(" Error selecting config type: {}", err));
+            1
         });
 
     TYPES_RELATIONAL_BASES[selection]

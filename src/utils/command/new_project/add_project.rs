@@ -6,8 +6,8 @@ use crate::utils::common::{
     create_dir::create_dir,
     create_file::create_file,
     file::{load_template, overwrite_file},
-    status_cargo::execute_cargo,
     logger::*,
+    status_cargo::execute_cargo,
 };
 use std::{path::PathBuf, thread};
 
@@ -34,7 +34,6 @@ impl Project {
 
         let current_dir_project: String = format!("{}", self.home_path.display());
         execute_cargo("new", Some(&self.name_project), current_dir_project)
-        
     }
 
     pub fn create_actix(&self) {
