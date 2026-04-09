@@ -1,5 +1,4 @@
 pub mod add_dependency;
-//pub mod check_cargo_toml;
 pub mod check_path;
 pub mod clear_terminal;
 pub mod create_dir;
@@ -9,3 +8,4 @@ pub mod logger;
 pub mod progress;
 pub mod remove_directory;
 pub mod selection_type;
+pub mod status_cargo;

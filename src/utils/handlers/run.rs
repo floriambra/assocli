@@ -1,6 +1,8 @@
-use crate::{shared::global::PROJECT_PATH, utils::common::{logger::*, check_path::*}};
+use crate::{
+    shared::global::PROJECT_PATH,
+    utils::common::{check_path::*, logger::*},
+};
 use std::thread;
-
 
 pub fn handler_run(name_project: &str) {
     run_cargo_command("run", None, name_project.to_string());
@@ -12,9 +14,9 @@ fn run_cargo_command(arg: &str, optional_arg: Option<&str>, name_project: String
     if let Some(_path) = path {
         let path_project = _path.to_path_buf().join(&name_project);
         let cargo_toml = path_project.join("Cargo.toml");
-        
+
         check_file_existing(&cargo_toml);
-        
+
         thread::sleep(std::time::Duration::from_secs(1));
 
         let mut output = std::process::Command::new("cargo");

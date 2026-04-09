@@ -1,5 +1,4 @@
 pub mod progress_bar {
-    use console::style;
     use indicatif::{ProgressBar, ProgressStyle};
 
     use crate::utils::common::logger::{logger_error, logger_info};

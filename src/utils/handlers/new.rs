@@ -1,9 +1,9 @@
 use crate::shared::global::PROJECT_PATH;
 use crate::utils::common::{
-    remove_directory::delete_folder, 
-    logger::{logger_error, logger_info, logger_warning},
+    check_path::check_directory,
     create_dir::create_dir,
-    check_path::check_directory
+    logger::{logger_error, logger_info, logger_warning},
+    remove_directory::delete_folder,
 };
 use crate::utils::{
     command::new_project::add_project::Project, common::clear_terminal::clear_terminal,
@@ -14,15 +14,14 @@ use std::{thread, time::Duration};
 
 pub fn handle_new(project_name: &str) {
     let path_home = PROJECT_PATH.as_deref();
-    
+
     if let Some(_path_home) = path_home {
-        
         if check_directory(_path_home, "Asso") {
             create_dir(&_path_home.to_path_buf());
         }
-        
+
         let mut new_project = Project::new(_path_home.to_path_buf(), project_name);
-        
+
         let confirmed = Confirm::new()
             .with_prompt(
                 style(format!(

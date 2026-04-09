@@ -1,146 +1,74 @@
 use crate::shared::global::PROJECT_PATH;
-use crate::utils::common::{clear_terminal::clear_terminal, progress::progress_bar};
-use console::style;
-use indicatif::ProgressBar;
-use std::path::PathBuf;
-use std::process;
+use crate::utils::common::check_path::check_file_existing;
+use crate::utils::common::{
+    clear_terminal::clear_terminal, logger::*, status_cargo::execute_cargo,
+};
+use std::{fs, path::PathBuf, thread};
 
 pub fn handler_release(name_project: &str) {
-    run_cargo_command("build", Some("--release"), name_project.to_string());
-}
+    let path_project = PROJECT_PATH.as_deref();
 
-fn run_cargo_command(arg: &str, optional_arg: Option<&str>, name_project: String) {
-    let path = PROJECT_PATH.as_deref();
-
-    if let Some(_path) = path {
-        let dir_project = _path.to_path_buf().join(&name_project);
-        let cargo_toml = dir_project.join("Cargo.toml");
-
-        if !cargo_toml.exists() {
-            eprintln!("{}", style("  The project does not exist").red().bold());
-            process::exit(1);
-        }
-
-        std::thread::sleep(std::time::Duration::from_secs(1));
-        let progress = ProgressBar::new(100);
-        progress_bar::start_progress(progress.clone(), "\nCompiling project...".to_string());
-
-        let mut output = std::process::Command::new("cargo");
-
-        output.arg(arg);
-
-        if let Some(arg) = optional_arg {
-            output.arg(arg);
-        }
-
-        let child_result = output
-            .current_dir(&dir_project)
-            .stdout(std::process::Stdio::null())
-            .spawn();
-
-        if let Ok(child) = child_result {
-            progress_bar::progressing(progress.clone(), child);
-
-            let status = output.output().unwrap();
-
-            progress_bar::progress_message_finish(progress, status.clone());
-            if !status.status.success() {
-                eprintln!(
-                    "{}",
-                    style(String::from_utf8_lossy(&status.stderr)).red().bold()
-                );
-            }
-        } else {
-            eprintln!(
-                "{}",
-                style("  Error trying to start the process").red().bold()
-            )
-        }
-
-        lift_release_service(cargo_toml, dir_project);
-    } else {
-        eprintln!(
-            "{}",
-            style("  Error searching for project path").red().bold()
-        )
+    if path_project.is_none() {
+        logger_error("Error searching for project path".to_string());
     }
+
+    let directory_project = path_project.unwrap().join(name_project);
+    execute_cargo("build", Some("--release"), name_project.to_string());
+    lift_release_service(directory_project.join("Cargo.toml"), directory_project);
 }
 
-pub fn lift_release_service(cargo_toml_path: PathBuf, path: PathBuf) {
-    if let Ok(cargo_toml_content) = std::fs::read_to_string(&cargo_toml_path) {
+pub fn lift_release_service(project_cargo_toml_path: PathBuf, project_path: PathBuf) {
+    if let Ok(cargo_toml_content) = fs::read_to_string(&project_cargo_toml_path) {
         let project_name = cargo_toml_content
             .lines()
             .find(|line| line.trim_start().starts_with("name"))
             .and_then(|line| line.split('=').nth(1))
             .map(|name| name.trim().trim_matches('"').to_string());
 
-        let Some(project_name) = project_name else {
-            eprintln!(
-                "{}",
-                style(
-                    "  The project name could not be determined from Cargo.toml
-                "
-                )
-                .red()
-            );
-            std::process::exit(1);
+        if project_name.is_none() {
+            logger_error("The project name could not be determined from Cargo.toml".to_string());
         };
 
-        std::thread::sleep(std::time::Duration::from_secs(3));
+        thread::sleep(std::time::Duration::from_secs(3));
         clear_terminal();
-        println!(
-            "{}",
-            style(format!("󰍦  Starting project service: {project_name}")).blue()
-        );
+        logger_debug(format!(
+            "󰍦  Starting project service: {}",
+            project_name.clone().unwrap()
+        ));
 
-        let binary_path = path.join("target").join("release").join(&project_name);
+        let binary_path = project_path
+            .join("target")
+            .join("release")
+            .join(project_name.clone().unwrap());
 
-        if !binary_path.exists() {
-            eprintln!("{}",style(format!(
-                "  Binary does not exist in {}. Make sure to compile with `cargo build --release` first.",binary_path.display() 
-            )).red());
-            std::process::exit(1);
-        }
+        check_file_existing(&binary_path);
 
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(std::time::Duration::from_secs(1));
+
         let child = std::process::Command::new(&binary_path)
-            .current_dir(&path)
+            .current_dir(&project_path)
             .stdout(std::process::Stdio::inherit())
             .stderr(std::process::Stdio::inherit())
-            .spawn(); // Con esto pasa la aplicacion a segundo plano. 
+            .spawn();
 
         if let Ok(mut _child) = child {
-            println!(
-                "{}",
-                style(format!(
-                    "  Service '{project_name}' running (Ctrl+C to stop)"
-                ))
-                .cyan()
-            );
+            logger_debug(format!(
+                "  Service '{}' running (Ctrl+C to stop)",
+                &project_name.unwrap()
+            ));
 
             let status = _child.wait();
 
-            // Opcional: si el hijo falló, salir con su código de error
             if status.is_err() {
-                eprintln!("{}", style("Failed to wait on child process").red().bold());
-                std::process::exit(1);
+                logger_error("Failed to wait on child process".to_string());
             }
         } else {
-            eprintln!(
-                "{}",
-                style(format!("  Error starting service {project_name}"))
-                    .red()
-                    .bold()
-            );
-            std::process::exit(1);
+            logger_error(format!(
+                "  Error starting service {}",
+                project_name.unwrap()
+            ));
         }
     } else {
-        eprintln!(
-            "{}",
-            style("  Error reading content from Cargo.toml")
-                .red()
-                .bold()
-        );
-        std::process::exit(1);
+        logger_error("Error reading content from Cargo.toml".to_string());
     }
 }
