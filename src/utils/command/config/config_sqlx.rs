@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use crate::utils::command::api::type_api::Module;
 use crate::utils::common::{
     add_dependency::add_dependency, check_path::*, create_dir::create_dir,
-    create_file::create_file, file::*,
+    create_file::create_file, file::*,logger::logger_info
 };
-
+use std::{thread, time};
 pub struct Sqlx {
     pub module: Module,
     pub database_engine: String,
@@ -20,20 +20,18 @@ impl Sqlx {
     }
 
     pub fn create_folder_database(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         check_project_path(&self.module.project_path);
         check_module_path(&self.module.module_path);
 
-        let path_folder_database: PathBuf =
-            self.module.project_path.join("src/app/shared/database");
-        if check_directory(&path_folder_database, "database") {
-            create_dir(&path_folder_database);
+        if check_directory(&self.module.project_path.join("src/app/shared/database"), "database") {
+            create_dir(&self.module.project_path.join("src/app/shared/database"));
         }
     }
 
     pub fn create_configuration_files(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+        thread::sleep(time::Duration::from_secs(1));
 
         let path_folder_database: PathBuf =
             self.module.project_path.join("src/app/shared/database");
@@ -51,16 +49,24 @@ impl Sqlx {
         load_template("docker-file-postgres-database.yml", &path_docker_file);
     }
 
-    pub fn inject_dependencies(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    pub fn create_configuration_database(&self) {
+        self.inject_dependencies();
+        self.adding_environment_variables();
+        self.adding_database_module();
+        self.modify_global_status();
+        self.modify_main();
+    }
+
+    fn inject_dependencies(&self) {
+        thread::sleep(time::Duration::from_secs(1));
         add_dependency(
             "sqlx",
             Some("runtime-tokio-rustls,postgres,uuid,macros"),
             self.module.project_path.to_str().unwrap(),
         );
     }
-    pub fn adding_environment_variables(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    fn adding_environment_variables(&self) {
+        thread::sleep(time::Duration::from_secs(1));
         let path_enviroment_variables = self.module.project_path.join(".env");
         let content = "DB_PASSWORD=6745YHDSDJ8923\nDB_NAME=asso\nDATABASE_URL=postgres://postgres:6745YHDSDJ8923@127.0.0.1/asso".to_string();
 
@@ -70,8 +76,8 @@ impl Sqlx {
         overwrite_file(&path_enviroment_variables, &content);
     }
 
-    pub fn adding_database_module(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    fn adding_database_module(&self) {
+        thread::sleep(time::Duration::from_secs(1));
         let path_module_shared = self.module.project_path.join("src/app/shared/mod.rs");
         let content = "pub mod database;";
 
@@ -81,8 +87,8 @@ impl Sqlx {
         overwrite_file(&path_module_shared, content);
     }
 
-    pub fn modify_global_status(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    fn modify_global_status(&self) {
+        thread::sleep(time::Duration::from_secs(1));
         let path_state_global = self
             .module
             .project_path
@@ -135,8 +141,8 @@ impl Sqlx {
         );
     }
 
-    pub fn modify_main(&self) {
-        std::thread::sleep(std::time::Duration::from_secs(1));
+    fn modify_main(&self) {
+        thread::sleep(time::Duration::from_secs(1));
         let path_main = self.module.project_path.join("src/main.rs");
 
         if !verify_content_on_file(&path_main, "env_url_database_postgres") {
@@ -176,5 +182,7 @@ impl Sqlx {
             &path_repositories,
             &self.module.name_module,
         );
+        
+        logger_info(format!("{} created successfully", self.database_engine));
     }
 }

@@ -1,6 +1,6 @@
 use crate::{
     shared::global::PROJECT_PATH,
-    utils::common::{check_path::*, logger::*},
+    utils::common::{logger::*,status_cargo::check_toml_project},
 };
 use std::thread;
 
@@ -15,7 +15,8 @@ fn run_cargo_command(arg: &str, optional_arg: Option<&str>, name_project: String
         let path_project = _path.to_path_buf().join(&name_project);
         let cargo_toml = path_project.join("Cargo.toml");
 
-        check_file_existing(&cargo_toml);
+        
+        check_toml_project(&cargo_toml);
 
         thread::sleep(std::time::Duration::from_secs(1));
 

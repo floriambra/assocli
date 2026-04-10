@@ -1,4 +1,6 @@
 pub mod progress_bar {
+    use std::io::Error;
+
     use indicatif::{ProgressBar, ProgressStyle};
 
     use crate::utils::common::logger::{logger_error, logger_info};
@@ -12,14 +14,31 @@ pub mod progress_bar {
         progress_bar.set_message(message);
     }
 
-    pub fn progressing(progress_bar: ProgressBar, mut child: std::process::Child) {
+    /* 
+    pub fn progressing(progress_bar: ProgressBar, line: &Result<String,Error>) {
         let mut progress = 0;
-        while let Ok(None) = child.try_wait() {
+        while let Ok(_) = line {
             progress = (progress + 1).min(100);
             progress_bar.set_position(progress);
             std::thread::sleep(std::time::Duration::from_millis(80));
         }
     }
+*/
+pub fn progressing(progress_bar: ProgressBar, line: &Result<String, Error>) {
+    // Solo actuamos si la línea se leyó correctamente
+    if line.is_ok() {
+        // 1️⃣ Reiniciar barra al inicio por cada nuevo paquete
+        progress_bar.set_position(0);
+
+        // 2️⃣ Animación visual de 0 a 100 para esta dependencia
+        for step in 0..=100 {
+            progress_bar.set_position(step);
+            // Pausa ajustable para efecto visual. 
+            // 15ms = ~1.5 seg por paquete. Modifica según tu preferencia.
+            std::thread::sleep(std::time::Duration::from_millis(15));
+        }
+    }
+}
 
     pub fn progress_message_finish(progress_bar: ProgressBar, output: std::process::Output) {
         if output.status.success() {

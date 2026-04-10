@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use crate::utils::common::{check_path, logger::*};
+use crate::utils::common::logger::*;
 
 pub fn check_project_path(path: &Path) -> bool {
     if !path.exists() {

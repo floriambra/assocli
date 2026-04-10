@@ -8,11 +8,11 @@ use std::{
     process, thread,
 };
 
-pub fn check_toml_project(name_project: &str) -> bool {
+pub fn check_toml_project(name_project: &PathBuf) -> bool {
     let path = PROJECT_PATH.as_deref();
 
     if let Some(_path) = path {
-        let dir_project = _path.to_path_buf().join(&name_project);
+        let dir_project = _path.join(name_project);
         let cargo_toml = dir_project.join("Cargo.toml");
 
         if !cargo_toml.exists() {
@@ -36,14 +36,9 @@ pub fn execute_cargo(arg: &str, optional_arg: Option<&str>, name_project: String
         logger_error("Project path issues".to_string());
     }
 
-    if !check_toml_project(&name_project) {
-        logger_error("Error searching for project path".to_string());
-        return false;
-    }
-
     thread::sleep(std::time::Duration::from_secs(1));
 
-    let progress = ProgressBar::new(100);
+    let progress_def = ProgressBar::new(100);
 
     let mut cmd = process::Command::new("cargo");
     cmd.arg(arg);
@@ -57,21 +52,25 @@ pub fn execute_cargo(arg: &str, optional_arg: Option<&str>, name_project: String
 
     match cmd.spawn() {
         Ok(mut child) => {
-            let progress_clone = progress.clone();
+            
+            let progress_clone = progress_def.clone();
             // 1. Extraer stderr para lectura en tiempo real
             let stderr = child
                 .stderr
                 .take()
-                .expect("stderr debe estar en modo Piped");
+                .expect("stderr must be in Piped mode");
             let reader = BufReader::new(stderr);
 
             // Hilo dedicado para leer sin bloquear el proceso principal
+            progress_bar::start_progress(progress_def.clone(), format!("Compiling {}", name_project));
             thread::spawn(move || {
                 for line in reader.lines() {
                     // FIX #1: `lines()` devuelve `Result<String, std::io::Error>`
+                    progress_bar::progressing(progress_clone.clone(), &line);
                     if let Ok(line_str) = line {
                         if line_str.contains("Compiling") || line_str.contains("Checking") {
                             progress_clone.inc(1);
+                            
                             // Si tu barra necesita el texto descomenta:
                             // progress_bar::update_message(progress_clone.clone(), line_str);
                         }
@@ -87,7 +86,7 @@ pub fn execute_cargo(arg: &str, optional_arg: Option<&str>, name_project: String
             // La firma idiomática en Rust es `&mut Child` o devolver el `Child`.
             let exit_status = child.wait().expect("Fallo al esperar al proceso cargo");
 
-            progress_bar::progressing(progress.clone(), child);
+            
 
             // Esperar a que termine el proceso
 
@@ -99,7 +98,7 @@ pub fn execute_cargo(arg: &str, optional_arg: Option<&str>, name_project: String
                 stderr: Vec::new(), // Consumido por el hilo de lectura
             };
 
-            progress_bar::progress_message_finish(progress, output.clone());
+            progress_bar::progress_message_finish(progress_def, output.clone());
 
             if !output.status.success() {
                 logger_error("Compilación fallida. Revisa el log de cargo.".to_string());

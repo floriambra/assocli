@@ -4,29 +4,22 @@ use crate::{
         command::{api::type_api::Module, config::config_sqlx::Sqlx},
         common::selection_type::{choose_types_relational_bases, choose_your_configuration_type},
     },
+    
 };
 
-use crate::utils::common::logger::*;
+use crate::utils::common::{logger::*,check_path::*};
+use std::{path::PathBuf,thread,time};
 
 pub fn handler_config(name_module: &str, name_project: &str) {
-    let mut path_project = std::path::PathBuf::new();
-    let mut path_module = std::path::PathBuf::new();
+    let mut path_project = PathBuf::new();
+    let mut path_module = PathBuf::new();
 
     if let Some(_path) = PROJECT_PATH.as_deref() {
-        path_project = std::path::PathBuf::from(_path).join(name_project);
+        path_project = PathBuf::from(_path).join(name_project);
         path_module = path_project.join("src/app/module").join(name_module);
 
-        println!("{}", path_module.display());
-        if !path_project.exists() {
-            logger_error(format!("The project {} does not exist", name_project))
-        }
-
-        if !path_module.exists() {
-            logger_error(format!(
-                "The module {} does not exist in project {}",
-                name_project, name_module
-            ));
-        }
+        check_project_path(&path_project);
+        check_module_path(&path_module);
     } else {
         logger_error("Error creating project path to query".to_string());
     }
@@ -48,18 +41,14 @@ pub fn handler_config(name_module: &str, name_project: &str) {
                     let configuring_sqlx_postgres: Sqlx = Sqlx::new(module, database_engine);
                     configuring_sqlx_postgres.create_folder_database();
                     configuring_sqlx_postgres.create_configuration_files();
-                    configuring_sqlx_postgres.inject_dependencies();
-                    configuring_sqlx_postgres.adding_environment_variables();
-                    configuring_sqlx_postgres.adding_database_module();
-                    configuring_sqlx_postgres.modify_global_status();
-                    configuring_sqlx_postgres.modify_main();
+                    configuring_sqlx_postgres.create_configuration_database();
                     configuring_sqlx_postgres.modify_module();
 
-                    std::thread::sleep(std::time::Duration::from_secs(1));
+                    thread::sleep(time::Duration::from_secs(1));
                     logger_info("\n 󰪩 Module configured to work with sqlx and postgres.\n\n󰪩 Use Asso docker compose to lift development container for postgres.".to_string());
                 }
                 "mariadb" => {
-                    println!("Estamos en mariadb")
+                    logger_warning("There is currently no configuration for MariaDb".to_string());
                 }
                 _ => logger_error("Database engine has not been currently mapped...".to_string()),
             }

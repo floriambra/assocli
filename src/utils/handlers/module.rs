@@ -5,7 +5,6 @@ use crate::{
         common::{check_path::check_project_path, logger::*, selection_type::choose_module_type},
     },
 };
-use console::style;
 use std::path::PathBuf;
 
 pub fn handler_module(name_module: &str, name_project: &str) {
