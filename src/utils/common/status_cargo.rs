@@ -1,7 +1,5 @@
 use crate::shared::global::PROJECT_PATH;
 use crate::utils::common::logger::*;
-use crate::utils::common::progress::progress_bar;
-use indicatif::ProgressBar;
 use std::{
     io::{BufRead, BufReader},
     path::PathBuf,
@@ -16,7 +14,8 @@ pub fn check_toml_project(name_project: &PathBuf) -> bool {
         let cargo_toml = dir_project.join("Cargo.toml");
 
         if !cargo_toml.exists() {
-            logger_error("Cargo.toml file is not present in the project".to_string())
+            logger_error("Cargo.toml file is not present in the project".to_string());
+            return false;
         }
 
         true
@@ -34,77 +33,88 @@ pub fn execute_cargo(arg: &str, optional_arg: Option<&str>, name_project: String
         directory_project = directory_project.join(path).join(&name_project);
     } else {
         logger_error("Project path issues".to_string());
+        return false;
     }
 
     thread::sleep(std::time::Duration::from_secs(1));
 
-    let progress_def = ProgressBar::new(100);
-
     let mut cmd = process::Command::new("cargo");
     cmd.arg(arg);
+
     if let Some(opt) = optional_arg {
         cmd.arg(opt);
     }
 
+    // Stream native Cargo logs directly (stdout + stderr), without custom progress UI.
     cmd.current_dir(&directory_project)
-        .stdout(process::Stdio::null())
+        .stdout(process::Stdio::piped())
         .stderr(process::Stdio::piped());
 
     match cmd.spawn() {
         Ok(mut child) => {
-            
-            let progress_clone = progress_def.clone();
-            // 1. Extraer stderr para lectura en tiempo real
-            let stderr = child
-                .stderr
-                .take()
-                .expect("stderr must be in Piped mode");
-            let reader = BufReader::new(stderr);
+            let stdout = child.stdout.take().expect("stdout must be in Piped mode");
+            let stderr = child.stderr.take().expect("stderr must be in Piped mode");
 
-            // Hilo dedicado para leer sin bloquear el proceso principal
-            progress_bar::start_progress(progress_def.clone(), format!("Compiling {}", name_project));
-            thread::spawn(move || {
+            // Keep detailed stderr lines to print a useful error summary if cargo fails.
+            let stderr_handle = thread::spawn(move || {
+                let reader = BufReader::new(stderr);
+                let mut collected_errors: Vec<String> = Vec::new();
+
                 for line in reader.lines() {
-                    // FIX #1: `lines()` devuelve `Result<String, std::io::Error>`
-                    progress_bar::progressing(progress_clone.clone(), &line);
-                    if let Ok(line_str) = line {
-                        if line_str.contains("Compiling") || line_str.contains("Checking") {
-                            progress_clone.inc(1);
-                            
-                            // Si tu barra necesita el texto descomenta:
-                            // progress_bar::update_message(progress_clone.clone(), line_str);
+                    match line {
+                        Ok(text) => {
+                            eprintln!("{text}");
+
+                            let lower = text.to_lowercase();
+                            if lower.contains("error")
+                                || lower.contains("failed")
+                                || lower.contains("could not compile")
+                            {
+                                collected_errors.push(text);
+                            }
                         }
-                    } else {
-                        break; // Fin del stream o error de I/O
+                        Err(_) => break,
                     }
                 }
-                progress_clone.finish();
+
+                collected_errors
             });
 
-            // FIX #2: `progressing` espera `Child`. Se pasa UNA sola vez para vincularlo.
-            // ⚠️ Nota: Si esta función toma `Child` por valor, lo consume y NO podrás llamar a `wait()` después.
-            // La firma idiomática en Rust es `&mut Child` o devolver el `Child`.
-            let exit_status = child.wait().expect("Fallo al esperar al proceso cargo");
+            // Stream stdout as-is so user sees native Cargo logs.
+            let stdout_handle = thread::spawn(move || {
+                let reader = BufReader::new(stdout);
+                for line in reader.lines() {
+                    if let Ok(text) = line {
+                        println!("{text}");
+                    } else {
+                        break;
+                    }
+                }
+            });
 
-            
+            let exit_status = child.wait().expect("Failed waiting cargo process");
 
-            // Esperar a que termine el proceso
+            // Ensure stream threads finish before evaluating final result.
+            let _ = stdout_handle.join();
 
-            // FIX #3: `progress_message_finish` espera `Output`. Lo construimos manualmente.
-            // Docs: https://doc.rust-lang.org/std/process/struct.Output.html
-            let output = process::Output {
-                status: exit_status,
-                stdout: Vec::new(), // Redirigido a Stdio::null()
-                stderr: Vec::new(), // Consumido por el hilo de lectura
+            let collected_errors = match stderr_handle.join() {
+                Ok(lines) => lines,
+                Err(_) => vec!["Cargo stderr reader thread failed".to_string()],
             };
 
-            progress_bar::progress_message_finish(progress_def, output.clone());
-
-            if !output.status.success() {
-                logger_error("Compilación fallida. Revisa el log de cargo.".to_string());
-                false
-            } else {
+            if exit_status.success() {
+                logger_info("  Compilation completed successfully".to_string());
                 true
+            } else {
+                if collected_errors.is_empty() {
+                    logger_error("Compilation failed. Cargo returned an error status.".to_string());
+                } else {
+                    logger_error(format!(
+                        "Compilation failed. Cargo error details:\n{}",
+                        collected_errors.join("\n")
+                    ));
+                }
+                false
             }
         }
         Err(e) => {

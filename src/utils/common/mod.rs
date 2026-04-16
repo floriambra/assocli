@@ -5,7 +5,6 @@ pub mod create_dir;
 pub mod create_file;
 pub mod file;
 pub mod logger;
-pub mod progress;
 pub mod remove_directory;
 pub mod selection_type;
 pub mod status_cargo;

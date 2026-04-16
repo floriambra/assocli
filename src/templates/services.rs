@@ -26,7 +26,8 @@ pub(crate) mod service {
                     }
                 }
                 Err(err) => {
-                    tracing::error!(err);
+                    let _error = format!("{err}");
+                    tracing::error!(_error);
                     Err(ErrorAx::service_unavailable(" "))
                 }
             }
@@ -42,7 +43,8 @@ pub(crate) mod service {
                     }
                 }
                 Err(err) => {
-                    tracing::error!(err);
+                    let _error = format!("{err}");
+                    tracing::error!(_error);
                     Err(ErrorAx::service_unavailable(""))
                 }
             }
@@ -78,7 +80,8 @@ pub(crate) mod service {
                     }
                 }
                 Err(err) => {
-                    tracing::error!(err);
+                    let _error = format!("{err}");
+                    tracing::error!(_error);
                     Err(ErrorAx::service_unavailable(""))
                 }
             }
@@ -115,7 +118,8 @@ pub(crate) mod service {
                     }
                 }
                 Err(err) => {
-                    tracing::error!(err);
+                    let _error = format!("{err}");
+                    tracing::error!(_error);
                     Err(ErrorAx::service_unavailable(""))
                 }
             }
@@ -131,7 +135,8 @@ pub(crate) mod service {
                     }
                 }
                 Err(err) => {
-                    tracing::error!(err);
+                    let _error = format!("{err}");
+                    tracing::error!(_error);
                     Err(ErrorAx::service_unavailable(""))
                 }
             }

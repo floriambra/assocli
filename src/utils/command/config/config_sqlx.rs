@@ -167,13 +167,17 @@ impl Sqlx {
         let path_module = self.module.module_path.join("mod.rs");
         let path_repositories = self.module.module_path.join("repositories.rs");
 
+        
+        // pub fn configure(_state: std::sync::Arc<AppState>) -> Router {
+        
         if !verify_content_on_file(&path_module, "sqlx_pool") {
+            
+            modify_file(&path_module, "Repository::new(", "Repository::new(pool");
             modify_file(
                 &path_module,
-                "pub fn configure(state: std::sync::Arc<AppState>) -> Router {",
-                "pub fn configure(state: std::sync::Arc<AppState>) -> Router {\nlet pool = state.sqlx_pool.clone();",
+                "pub fn configure(_state: std::sync::Arc<AppState>) -> Router {",
+                "pub fn configure(_state: std::sync::Arc<AppState>) -> Router {\nlet pool = _state.sqlx_pool.clone();",
             );
-            modify_file(&path_module, "Repository::new(", "Repository::new(pool");
         }
 
         delete_file_content(&path_repositories);
