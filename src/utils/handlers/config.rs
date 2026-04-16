@@ -4,11 +4,10 @@ use crate::{
         command::{api::type_api::Module, config::config_sqlx::Sqlx},
         common::selection_type::{choose_types_relational_bases, choose_your_configuration_type},
     },
-    
 };
 
-use crate::utils::common::{logger::*,check_path::*};
-use std::{path::PathBuf,thread,time};
+use crate::utils::common::{check_path::*, logger::*};
+use std::{path::PathBuf, thread, time};
 
 pub fn handler_config(name_module: &str, name_project: &str) {
     let mut path_project = PathBuf::new();
@@ -41,14 +40,26 @@ pub fn handler_config(name_module: &str, name_project: &str) {
                     let configuring_sqlx_postgres: Sqlx = Sqlx::new(module, database_engine);
                     configuring_sqlx_postgres.create_folder_database();
                     configuring_sqlx_postgres.create_configuration_files();
-                    configuring_sqlx_postgres.create_configuration_database();
                     configuring_sqlx_postgres.modify_module();
+                    configuring_sqlx_postgres.create_configuration_database();
+                    
 
                     thread::sleep(time::Duration::from_secs(1));
                     logger_info("\n 󰪩 Module configured to work with sqlx and postgres.\n\n󰪩 Use Asso docker compose to lift development container for postgres.".to_string());
                 }
                 "mariadb" => {
-                    logger_warning("There is currently no configuration for MariaDb".to_string());
+                    database_engine.push_str("mariadb");
+                    logger_debug("\n Configuring module for sqlx and mariadb....\n".to_string());
+                    std::thread::sleep(std::time::Duration::from_secs(2));
+                    let configuring_sqlx_mariadb: Sqlx = Sqlx::new(module, database_engine);
+                    configuring_sqlx_mariadb.create_folder_database();
+                    configuring_sqlx_mariadb.create_configuration_files();
+                    configuring_sqlx_mariadb.modify_module();
+                    configuring_sqlx_mariadb.create_configuration_database();
+                    
+
+                    thread::sleep(time::Duration::from_secs(1));
+                    logger_info("\n 󰪩 Module configured to work with sqlx and mariadb.\n\n󰪩 Use Asso docker compose to lift development container for mariadb.".to_string());
                 }
                 _ => logger_error("Database engine has not been currently mapped...".to_string()),
             }

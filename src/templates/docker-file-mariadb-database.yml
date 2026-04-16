@@ -1,0 +1,14 @@
+services:
+  db:
+    image: mariadb:11.4
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME}
+    container_name: database_sqlx_mariadb
+    volumes:
+      - mariadb_data:/var/lib/mysql
+volumes:
+  mariadb_data:
